@@ -3,387 +3,1007 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze — Stable Hybrid</title>
+<title>ATS Resume Maze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
 
 <style>
-:root{
-  --bg:#f3f3f3;
-  --paper:#fff;
-  --ink:#111;
-  --ui:#ddd;
-  --nav:#1D3461;
-  --yellow:#ffe86a;
-  --tealbg:#F0FAFB;
-  --teal:#0A6E6E;
-  --red:#ff6b6b;
-  --muted:#6b6b6b;
+:root {
+  --bg: #0e0e12;
+  --surface: #16161c;
+  --surface2: #1e1e28;
+  --border: #2a2a38;
+  --text: #e8e6f0;
+  --muted: #7a7890;
+  --accent: #c8f060;
+  --accent2: #60c8f0;
+  --trap: #f06060;
+  --gold: #f0c060;
+  --nav-w: 320px;
 }
 
-body{ margin:0; background:var(--bg); font-family:Georgia, serif; color:var(--ink); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Rail */
-.rail{
-  position:fixed; left:0; top:0;
-  width:340px; height:100vh;
-  background:var(--nav);
-  color:#fff;
-  padding:16px;
-  box-sizing:border-box;
-  overflow:auto;
-}
-.rail h2{ margin:0 0 12px; font-family:Arial,sans-serif; }
-.stat{ margin:8px 0; font-family:Arial,sans-serif; }
-button{
-  cursor:pointer; border:none; padding:10px 12px;
-  font-weight:bold; border-radius:6px;
-  background:#FFFBF0; color:var(--nav);
-}
-button:hover{ filter:brightness(.95); }
-
-#pathBox{ margin-top:12px; font-family:Arial,sans-serif; font-size:.85rem; }
-#pathBox code{
-  display:block; background:rgba(255,255,255,.12);
-  padding:8px; border-radius:6px; margin-top:6px;
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Fraunces', Georgia, serif;
+  min-height: 100vh;
 }
 
-#report{ margin-top:14px; font-family:Arial,sans-serif; font-size:.9rem; }
-
-/* Resume */
-.page{ margin-left:340px; padding:30px 20px; }
-.resume{
-  max-width:980px; margin:0 auto;
-  background:var(--paper);
-  padding:46px 64px;
-  box-shadow:0 2px 14px rgba(0,0,0,.08);
+/* ── SIDEBAR ── */
+.rail {
+  position: fixed; left: 0; top: 0;
+  width: var(--nav-w); height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
 }
 
-.section{ margin-top:22px; }
-.section-title{
-  font-weight:bold;
-  border-bottom:1px solid #000;
-  padding-bottom:4px;
-  margin-bottom:10px;
+.rail-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
 }
 
-/* Nodes */
-.node{
-  display:inline-block;
-  padding:2px 4px;
-  border-radius:3px;
-  cursor:pointer;
-}
-.node.disabled{ pointer-events:none; opacity:.45; }
-.node.available{ outline:2px solid rgba(10,110,110,.35); outline-offset:2px; }
-.node.visited{ background:var(--yellow); }
-.node.current{ background:var(--tealbg); outline:2px solid var(--teal); }
-.node.bad{ background:var(--red) !important; color:#fff; }
-
-/* Detours */
-.detour{
-  font-family:Arial,sans-serif;
-  font-size:.85rem;
-  background:#f2f2f2;
-  border:1px solid #e3e3e3;
-  padding:6px 8px;
-  border-radius:999px;
-  margin:4px 6px 4px 0;
-  display:inline-block;
+.rail-header h1 {
+  font-family: 'DM Mono', monospace;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: .05em;
+  text-transform: uppercase;
 }
 
-ul{ margin:0 0 0 22px; }
-li{ margin:6px 0; }
+.rail-header p {
+  font-size: .78rem;
+  color: var(--muted);
+  margin-top: 4px;
+  font-family: 'DM Mono', monospace;
+}
 
-.exp-grid{
-  margin-top:10px;
-  padding:12px;
-  border:1px solid var(--ui);
-  border-radius:8px;
-  background:#fafafa;
+.stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.stat-box .label {
+  font-family: 'DM Mono', monospace;
+  font-size: .65rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+
+.stat-box .value {
+  font-family: 'DM Mono', monospace;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+.stat-box .value.trap-val { color: var(--trap); }
+.stat-box .value.best-val { color: var(--gold); }
+
+.path-box {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+
+.path-box .label {
+  font-family: 'DM Mono', monospace;
+  font-size: .65rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.path-text {
+  font-family: 'DM Mono', monospace;
+  font-size: .72rem;
+  color: var(--accent2);
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.tip-box {
+  padding: 12px 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tip-inner {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: .82rem;
+  line-height: 1.55;
+  min-height: 60px;
+  transition: all .3s;
+}
+
+.tip-inner.trap-tip {
+  border-color: var(--trap);
+  background: rgba(240,96,96,.08);
+}
+
+.tip-inner.good-tip {
+  border-color: var(--accent);
+  background: rgba(200,240,96,.06);
+}
+
+.tip-label {
+  font-family: 'DM Mono', monospace;
+  font-size: .65rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 6px;
+}
+.tip-label.trap-label { color: var(--trap); }
+.tip-label.good-label { color: var(--accent); }
+.tip-label.info-label { color: var(--muted); }
+
+.report-box {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.report-inner {
+  font-family: 'DM Mono', monospace;
+  font-size: .78rem;
+  line-height: 1.6;
+}
+
+.report-inner .r-title {
+  color: var(--gold);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.report-inner .r-score {
+  font-size: 2rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.report-inner .r-row {
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.report-inner .r-traps {
+  color: var(--trap);
+}
+
+.btn-row {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+
+button {
+  width: 100%;
+  background: var(--accent);
+  color: #0e0e12;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: .85rem;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: .04em;
+  transition: filter .15s, transform .1s;
+}
+
+button:hover { filter: brightness(1.1); }
+button:active { transform: scale(.98); }
+
+/* ── MAIN RESUME ── */
+.page {
+  margin-left: var(--nav-w);
+  padding: 40px 32px;
+  min-height: 100vh;
+}
+
+.resume {
+  max-width: 860px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 48px 56px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.4);
+}
+
+.r-section { margin-top: 28px; }
+
+.r-section:first-child { margin-top: 0; }
+
+.section-title {
+  font-family: 'DM Mono', monospace;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 14px;
+}
+
+/* ── NODES ── */
+.node {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: default;
+  transition: background .15s, outline .15s, transform .1s;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.node.visited {
+  background: rgba(200,240,96,.15);
+  color: var(--accent);
+}
+
+.node.current {
+  background: rgba(96,200,240,.15);
+  color: var(--accent2);
+  outline: 2px solid var(--accent2);
+}
+
+.node.available {
+  cursor: pointer;
+  background: rgba(200,240,96,.08);
+  outline: 2px solid rgba(200,240,96,.4);
+  color: var(--text);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.node.available:hover {
+  background: rgba(200,240,96,.2);
+  transform: translateY(-1px);
+  animation: none;
+  outline-color: var(--accent);
+}
+
+.node.trap-visited {
+  background: rgba(240,96,96,.18);
+  color: var(--trap);
+  outline: 2px solid rgba(240,96,96,.5);
+}
+
+.node.disabled {
+  color: var(--muted);
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0%, 100% { outline-color: rgba(200,240,96,.4); }
+  50% { outline-color: rgba(200,240,96,.9); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.shaking { animation: shake .35s ease-in-out !important; }
+
+/* ── RESUME CONTENT STYLES ── */
+.header-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--text);
+}
+
+.header-contact {
+  font-family: 'DM Mono', monospace;
+  font-size: .78rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.exp-entry {
+  padding: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.exp-entry-header {
+  display: flex; justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.exp-title {
+  font-weight: 700;
+  font-size: .95rem;
+}
+
+.exp-company {
+  font-size: .85rem;
+  color: var(--accent2);
+  margin-top: 1px;
+}
+
+.exp-dates {
+  font-family: 'DM Mono', monospace;
+  font-size: .72rem;
+  color: var(--muted);
+}
+
+.exp-bullets {
+  list-style: none;
+  margin-top: 8px;
+}
+
+.exp-bullets li {
+  font-size: .88rem;
+  line-height: 1.5;
+  padding: 3px 0;
+  padding-left: 14px;
+  position: relative;
+  color: #c0bdd0;
+}
+
+.exp-bullets li::before {
+  content: '▸';
+  position: absolute; left: 0;
+  color: var(--accent);
+  font-size: .7rem;
+  top: 5px;
+}
+
+.detour-zone {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.detour-zone-label {
+  font-family: 'DM Mono', monospace;
+  font-size: .65rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.detour-zone .node {
+  margin: 3px 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: .78rem;
+}
+
+.skill-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.skill-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: .75rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  color: #b0aec0;
+}
+
+/* ── PROGRESS BAR ── */
+.progress-bar {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 12px 20px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  border-radius: 2px;
+  transition: width .4s ease;
+}
+
+/* ── FINISH OVERLAY ── */
+.finish-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(14,14,18,.85);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+
+.finish-overlay.show { display: flex; }
+
+.finish-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 48px;
+  max-width: 480px;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0,0,0,.6);
+  animation: cardIn .4s cubic-bezier(.34,1.56,.64,1);
+}
+
+@keyframes cardIn {
+  from { transform: scale(.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.finish-card h2 {
+  font-size: 1.1rem;
+  font-family: 'DM Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.finish-score {
+  font-family: 'DM Mono', monospace;
+  font-size: 5rem;
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1;
+  margin: 16px 0;
+}
+
+.finish-score.low { color: var(--trap); }
+.finish-score.mid { color: var(--gold); }
+
+.finish-details {
+  font-family: 'DM Mono', monospace;
+  font-size: .82rem;
+  color: var(--muted);
+  line-height: 1.8;
+  margin-bottom: 24px;
+}
+
+.finish-details .hl { color: var(--text); }
+.finish-details .trap-hl { color: var(--trap); }
+
+.finish-btn {
+  display: inline-block;
+  width: auto;
+  padding: 12px 32px;
+  font-size: .9rem;
+}
+
+.grade-msg {
+  font-size: 1.1rem;
+  color: var(--text);
+  margin-bottom: 12px;
+  font-style: italic;
 }
 </style>
 </head>
-
 <body>
 
+<!-- SIDEBAR -->
 <div class="rail">
-  <h2>ATS Resume Maze</h2>
-
-  <div class="stat"><strong>Moves:</strong> <span id="moveCount">0</span></div>
-  <div class="stat"><strong>Score:</strong> <span id="score">100</span></div>
-  <div class="stat"><strong>Best:</strong> <span id="bestScore">—</span></div>
-
-  <button id="resetBtn">Reset Run</button>
-
-  <div id="pathBox">
-    <strong>Path:</strong>
-    <code id="pathText">header</code>
+  <div class="rail-header">
+    <h1>ATS Resume Maze</h1>
+    <p>Navigate to education without traps</p>
   </div>
 
-  <div id="report"></div>
+  <div class="stats">
+    <div class="stat-box">
+      <div class="label">Moves</div>
+      <div class="value" id="moveCount">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Score</div>
+      <div class="value" id="scoreVal">100</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Traps Hit</div>
+      <div class="value trap-val" id="trapCount">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Best</div>
+      <div class="value best-val" id="bestScore">—</div>
+    </div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <div class="path-box">
+    <div class="label">Path</div>
+    <div class="path-text" id="pathText">header</div>
+  </div>
+
+  <div class="tip-box">
+    <div class="tip-inner" id="tipBox">
+      <div class="tip-label info-label">How to play</div>
+      Click any <strong style="color:var(--accent)">glowing node</strong> to move through the resume. Backbone nodes teach ATS best practices. Detour nodes in the Experience section are traps — each costs <strong>8 points</strong>. Reach Education with the highest score!
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button id="resetBtn">↺ New Run</button>
+  </div>
 </div>
 
+<!-- FINISH OVERLAY -->
+<div class="finish-overlay" id="finishOverlay">
+  <div class="finish-card">
+    <h2>Run Complete</h2>
+    <div class="finish-score" id="finishScore">—</div>
+    <div class="grade-msg" id="gradeMsg"></div>
+    <div class="finish-details" id="finishDetails"></div>
+    <button class="finish-btn" id="finishReset">Play Again</button>
+  </div>
+</div>
+
+<!-- RESUME -->
 <div class="page">
 <div class="resume">
 
-<div class="section">
-<div class="section-title">HEADER</div>
-<p id="headerLine"></p>
-</div>
+  <!-- HEADER -->
+  <div class="r-section">
+    <div class="section-title">Header</div>
+    <div class="header-name"><span class="node" id="n-header">Alex Rivera</span></div>
+    <div class="header-contact">Springfield, MA &nbsp;·&nbsp; alex@example.com &nbsp;·&nbsp; (555) 555-0192 &nbsp;·&nbsp; linkedin.com/in/alexrivera</div>
+  </div>
 
-<div class="section">
-<div class="section-title">SUMMARY</div>
-<p id="summaryLine"></p>
-</div>
+  <!-- SUMMARY -->
+  <div class="r-section">
+    <div class="section-title">Summary</div>
+    <p><span class="node" id="n-summary">Results-driven analytics professional with 5+ years driving measurable growth through data-informed strategy, GA4, and cross-functional collaboration.</span></p>
+  </div>
 
-<div class="section">
-<div class="section-title">SKILLS</div>
-<p id="skillsLine"></p>
-</div>
+  <!-- SKILLS -->
+  <div class="r-section">
+    <div class="section-title">Skills</div>
+    <div class="skill-tags">
+      <span class="node skill-tag" id="n-skills">GA4 &nbsp;·&nbsp; SQL &nbsp;·&nbsp; Tableau &nbsp;·&nbsp; Python &nbsp;·&nbsp; SEO &nbsp;·&nbsp; A/B Testing &nbsp;·&nbsp; Reporting</span>
+    </div>
+  </div>
 
-<div class="section">
-<div class="section-title">PROFESSIONAL EXPERIENCE</div>
-<ul id="expBackbone"></ul>
+  <!-- EXPERIENCE -->
+  <div class="r-section">
+    <div class="section-title">Professional Experience</div>
 
-<div class="exp-grid">
-<strong>Experience Drafting Detours (changes each run)</strong>
-<div id="expDetours"></div>
-</div>
-</div>
+    <div class="exp-entry">
+      <div class="exp-entry-header">
+        <div>
+          <div class="exp-title">Senior Analytics Manager</div>
+          <div class="exp-company">Meridian Digital, Boston MA</div>
+        </div>
+        <div class="exp-dates">Jan 2021 – Present</div>
+      </div>
+      <ul class="exp-bullets" id="backboneBullets"></ul>
+    </div>
 
-<div class="section">
-<div class="section-title">PROJECTS</div>
-<p id="projectsLine"></p>
-</div>
+    <div class="detour-zone">
+      <div class="detour-zone-label">⚠ Drafting Pitfalls — these are traps, avoid them!</div>
+      <div id="detourNodes"></div>
+    </div>
+  </div>
 
-<div class="section">
-<div class="section-title">CERTIFICATIONS</div>
-<p id="certsLine"></p>
-</div>
+  <!-- PROJECTS -->
+  <div class="r-section">
+    <div class="section-title">Projects</div>
+    <p><span class="node" id="n-projects">ATS-Optimized Resume System &mdash; built a scoring rubric that improved recruiter callback rate by 34%</span></p>
+  </div>
 
-<div class="section">
-<div class="section-title">EDUCATION</div>
-<p id="educationLine"></p>
-</div>
+  <!-- CERTIFICATIONS -->
+  <div class="r-section">
+    <div class="section-title">Certifications</div>
+    <p><span class="node" id="n-certifications">Google Analytics (GA4) Certification &nbsp;·&nbsp; HubSpot Inbound Marketing &nbsp;·&nbsp; Salesforce Admin</span></p>
+  </div>
+
+  <!-- EDUCATION -->
+  <div class="r-section">
+    <div class="section-title">Education</div>
+    <p><span class="node" id="n-education">B.A. Communication Studies, University of Massachusetts — Dean's List, 2018</span></p>
+  </div>
 
 </div>
 </div>
 
 <script>
-/* ---------- Persistence ---------- */
-const BEST_KEY="atsMazeBestScore";
-function getBest(){const r=localStorage.getItem(BEST_KEY);return r?Number(r):null;}
-function setBest(s){const b=getBest();if(b===null||s>b)localStorage.setItem(BEST_KEY,s);}
-function updateBest(){document.getElementById("bestScore").textContent=getBest()??"—";}
+/* ═══════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════ */
+const BEST_KEY = "atsMazeBest2";
 
-/* ---------- Graph ---------- */
-let nodes={}, graph={}, detours=[];
-function addNode(id,label,tag=""){nodes[id]={id,label,tag,el:null};graph[id]=[];}
-function connect(a,b){graph[a].push(b);graph[b].push(a);}
-
-function buildGraph(){
-nodes={}; graph={}; detours=[];
-
-addNode("header","Header");
-addNode("summary","Summary");
-addNode("skills","Skills");
-addNode("projects","Projects");
-addNode("certifications","Certifications");
-addNode("education","Education");
-
-connect("header","summary");
-connect("summary","skills");
-
-addNode("exp_entry","Enter Experience");
-addNode("exp_exit","Exit Experience");
-connect("skills","exp_entry");
-
-const backbone=["exp_b1","exp_b2","exp_b3","exp_b4","exp_b5"];
-const labels=[
-"Role + Company context",
-"Strong action verbs",
-"Quantified impact",
-"Tailored keywords",
-"Clean formatting"
-];
-backbone.forEach((id,i)=>addNode(id,labels[i]));
-connect("exp_entry","exp_b1");
-for(let i=0;i<backbone.length-1;i++)connect(backbone[i],backbone[i+1]);
-connect("exp_b5","exp_exit");
-connect("exp_exit","projects");
-
-connect("projects","certifications");
-connect("certifications","education");
-
-/* Detours always forward-recover */
-const trapTypes=[
-["weak_verbs","Weak verbs"],
-["no_metrics","No metrics"],
-["generic_alignment","Generic alignment"],
-["tables_layout","Tables/columns"],
-["graphics_icons","Icons/graphics"],
-["keyword_dump","Keyword dumping"]
-];
-
-const recover={
-exp_b1:"exp_b2",
-exp_b2:"exp_b3",
-exp_b3:"exp_b4",
-exp_b4:"exp_b5"
+const TRAP_DATA = {
+  weak_verbs: {
+    label: "⚠ Weak Verbs",
+    tip: "Verbs like 'helped', 'worked on', or 'assisted' dilute impact. ATS parsers and recruiters both prefer strong action verbs — 'led', 'built', 'increased', 'reduced'. Swap every weak verb."
+  },
+  no_metrics: {
+    label: "⚠ No Metrics",
+    tip: "Unquantified bullets are invisible to ATS and unpersuasive to humans. Always attach numbers: percentages, dollar amounts, headcounts, or time savings. 'Improved process' → 'Cut deploy time 40%'."
+  },
+  generic_alignment: {
+    label: "⚠ Generic Alignment",
+    tip: "Copy-pasting the same resume everywhere is a red flag. Mirror the job posting's exact keywords. ATS systems score keyword frequency — misaligned resumes score near zero."
+  },
+  tables_layout: {
+    label: "⚠ Tables / Columns",
+    tip: "Multi-column layouts and tables break most ATS parsers. Content gets reordered or dropped entirely. Use a single-column, linear layout — boring for humans but bulletproof for machines."
+  },
+  graphics_icons: {
+    label: "⚠ Icons / Graphics",
+    tip: "Skill bars, profile photos, and icons are invisible to ATS — they're just blank space or parse errors. Remove all decorative elements. Let words carry the weight."
+  },
+  keyword_dump: {
+    label: "⚠ Keyword Dumping",
+    tip: "Stuffing dozens of skills in tiny font or white-on-white text to fool ATS is immediately flagged by modern systems and blacklists your application. Be specific and honest instead."
+  }
 };
 
-let count=0;
-for(let anchor of ["exp_b1","exp_b2","exp_b3","exp_b4"]){
-if(Math.random()<0.7){
-count++;
-let t=trapTypes[Math.floor(Math.random()*trapTypes.length)];
-let id="exp_s"+count;
-addNode(id,t[1],"trap:"+t[0]);
-detours.push(id);
-connect(anchor,id);
-connect(id,recover[anchor]); // always forward
-}
-}
-}
+const BACKBONE_DATA = [
+  {
+    id: "exp_b1",
+    bullet: "Role + Company Context",
+    tip: "✓ Good: Lead with the role title and company type so ATS can categorize you correctly. Include location and dates in a standard format."
+  },
+  {
+    id: "exp_b2",
+    bullet: "Strong Action Verbs",
+    tip: "✓ Good: Begin every bullet with a power verb: 'Architected', 'Launched', 'Increased', 'Reduced'. ATS parsers rank these higher and recruiters read faster."
+  },
+  {
+    id: "exp_b3",
+    bullet: "Quantified Impact",
+    tip: "✓ Good: Numbers make bullets real. 'Increased retention 28% in Q3' outperforms 'Improved retention' on every metric — ATS keyword match, recruiter attention, and interview recall."
+  },
+  {
+    id: "exp_b4",
+    bullet: "Tailored Keywords",
+    tip: "✓ Good: Pull exact phrases from the job posting and weave them into your bullets naturally. ATS systems do literal string matching — 'project management' ≠ 'managing projects'."
+  },
+  {
+    id: "exp_b5",
+    bullet: "Clean Formatting",
+    tip: "✓ Good: Single column, standard fonts (no PDFs with embedded fonts), no headers/footers with critical info, no text boxes. ATS parsers are dumb — give them exactly what they expect."
+  }
+];
 
-/* ---------- State ---------- */
-function newState(){return{
-current:"header",
-visited:new Set(["header"]),
-moves:0,
-traps:new Map(),
-complete:false,
-path:["header"]
-};}
-let state;
+const SECTION_TIPS = {
+  header: "✓ Header: Your name, city+state (not full address), one professional email, LinkedIn URL, and optionally a phone. No photos, no graphics.",
+  summary: "✓ Summary: 2–3 sentences packed with role-specific keywords. Mirror the job title. This is prime ATS real estate — don't waste it on 'motivated self-starter'.",
+  skills: "✓ Skills: A flat, comma/pipe-separated list. No skill bars, no ratings, no icons. Include both spelled-out and acronym versions: 'Search Engine Optimization (SEO)'.",
+  projects: "✓ Projects: Quantify outcomes, name technologies explicitly. Recruiters treat strong projects as substitute experience.",
+  certifications: "✓ Certifications: Use the official certification name exactly — ATS matches it as a keyword. Include the issuing body.",
+  education: "🎉 Education: You made it! Degree, field of study, institution, year. Latin honors and GPA (if above 3.5) are worth including for recent grads."
+};
 
-/* ---------- UI ---------- */
-function makeNode(id,text,cls=""){
-let s=document.createElement("span");
-s.className="node "+cls;
-s.textContent=text??nodes[id].label;
-s.onclick=()=>move(id);
-nodes[id].el=s;
-return s;
-}
+/* ═══════════════════════════════════════════
+   GRAPH + STATE
+═══════════════════════════════════════════ */
+const BACKBONE = ["exp_b1","exp_b2","exp_b3","exp_b4","exp_b5"];
+const MAIN_SEQUENCE = ["header","summary","skills","exp_entry","education"];
 
-function render(){
-for(let id in nodes){
-let el=nodes[id].el;
-if(!el)continue;
-el.className="node disabled";
-}
+let graph = {};
+let nodeInfo = {};
+let state = {};
+let detourIds = [];
 
-state.visited.forEach(id=>{
-nodes[id].el.classList.add("visited","disabled");
-});
-
-let cur=nodes[state.current].el;
-cur.classList.add("current","visited","disabled");
-
-graph[state.current].forEach(id=>{
-nodes[id].el.classList.remove("disabled");
-nodes[id].el.classList.add("available");
-});
-
-document.getElementById("pathText").textContent=state.path.join(" → ");
-document.getElementById("moveCount").textContent=state.moves;
-document.getElementById("score").textContent=Math.max(0,100-state.moves-(state.traps.size*8));
+function addNode(id, label) {
+  nodeInfo[id] = { id, label };
+  graph[id] = [];
 }
 
-function flash(id){
-let el=nodes[id].el;
-el.classList.add("bad");
-setTimeout(()=>{el.classList.remove("bad");},350);
+function connect(a, b) {
+  if (!graph[a].includes(b)) graph[a].push(b);
+  if (!graph[b].includes(a)) graph[b].push(a);
 }
 
-function move(id){
-if(!graph[state.current].includes(id))return;
+function buildGraph() {
+  graph = {}; nodeInfo = {}; detourIds = [];
 
-state.moves++;
-state.current=id;
-state.visited.add(id);
-state.path.push(id);
+  // Main nodes
+  addNode("header", "Header");
+  addNode("summary", "Summary");
+  addNode("skills", "Skills");
+  addNode("exp_entry", "Experience");
+  addNode("projects", "Projects");
+  addNode("certifications", "Certifications");
+  addNode("education", "Education");
 
-if(nodes[id].tag?.startsWith("trap:")){
-let type=nodes[id].tag.split(":")[1];
-state.traps.set(type,true);
-render();
-flash(id);
-}else{
-render();
+  connect("header", "summary");
+  connect("summary", "skills");
+  connect("skills", "exp_entry");
+
+  // Backbone
+  BACKBONE_DATA.forEach(b => addNode(b.id, b.bullet));
+  connect("exp_entry", "exp_b1");
+  for (let i = 0; i < BACKBONE.length - 1; i++) connect(BACKBONE[i], BACKBONE[i+1]);
+  connect("exp_b5", "projects");
+  connect("projects", "certifications");
+  connect("certifications", "education");
+
+  // Detours — random selection, each attached to one backbone node
+  const trapTypes = Object.keys(TRAP_DATA);
+  const recoverTo = { exp_b1:"exp_b2", exp_b2:"exp_b3", exp_b3:"exp_b4", exp_b4:"exp_b5" };
+  const anchors = ["exp_b1","exp_b2","exp_b3","exp_b4"];
+  let usedTraps = [];
+  let cnt = 0;
+
+  for (let anchor of anchors) {
+    if (Math.random() < 0.65) {
+      // Pick a trap not yet used
+      let available = trapTypes.filter(t => !usedTraps.includes(t));
+      if (!available.length) available = trapTypes;
+      let trapType = available[Math.floor(Math.random() * available.length)];
+      usedTraps.push(trapType);
+
+      let id = "trap_" + cnt++;
+      addNode(id, TRAP_DATA[trapType].label);
+      nodeInfo[id].trapType = trapType;
+      nodeInfo[id].isTrap = true;
+      detourIds.push(id);
+
+      connect(anchor, id);
+      connect(id, recoverTo[anchor]); // always recovers forward
+    }
+  }
 }
 
-if(id==="education"){
-state.complete=true;
-finish();
-}
+function getScore() {
+  return Math.max(0, 100 - state.moves - (state.trapsHit * 8));
 }
 
-function finish(){
-let score=Math.max(0,100-state.moves-(state.traps.size*8));
-setBest(score); updateBest();
-
-let html="<h3>Run Summary</h3>";
-html+="<p><strong>Score:</strong> "+score+"<br>";
-html+="<strong>Moves:</strong> "+state.moves+"</p>";
-html+="<p><strong>Trap Types:</strong> "+(state.traps.size||"None")+"</p>";
-document.getElementById("report").innerHTML=html;
+function newState() {
+  return {
+    current: "header",
+    visited: new Set(["header"]),
+    moves: 0,
+    trapsHit: 0,
+    path: ["header"],
+    complete: false
+  };
 }
 
-/* ---------- Build Resume ---------- */
-function buildResume(){
-document.getElementById("headerLine").innerHTML="";
-document.getElementById("summaryLine").innerHTML="";
-document.getElementById("skillsLine").innerHTML="";
-document.getElementById("projectsLine").innerHTML="";
-document.getElementById("certsLine").innerHTML="";
-document.getElementById("educationLine").innerHTML="";
-document.getElementById("expBackbone").innerHTML="";
-document.getElementById("expDetours").innerHTML="";
+/* ═══════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════ */
+const NODE_STEPS = ["header","summary","skills","exp_entry","exp_b1","exp_b2","exp_b3","exp_b4","exp_b5","projects","certifications","education"];
 
-document.getElementById("headerLine").append(
-makeNode("header","FIRST LAST"),
-document.createTextNode(" • Springfield, MA • email@example.com • (555) 555-5555")
-);
-
-document.getElementById("summaryLine").append(
-makeNode("summary","Data-driven analytics professional"),
-document.createTextNode(" with measurable impact.")
-);
-
-document.getElementById("skillsLine").append(
-makeNode("skills","GA4 • SEO • Reporting")
-);
-
-let ul=document.getElementById("expBackbone");
-ul.appendChild(document.createElement("li")).appendChild(makeNode("exp_entry"));
-["exp_b1","exp_b2","exp_b3","exp_b4","exp_b5"].forEach(id=>{
-ul.appendChild(document.createElement("li")).appendChild(makeNode(id));
-});
-ul.appendChild(document.createElement("li")).appendChild(makeNode("exp_exit"));
-
-let d=document.getElementById("expDetours");
-detours.forEach(id=>{
-d.appendChild(makeNode(id,null,"detour"));
-});
-
-document.getElementById("projectsLine").append(makeNode("projects","ATS Resume Maze Prototype"));
-document.getElementById("certsLine").append(makeNode("certifications","Google Analytics Certification"));
-document.getElementById("educationLine").append(makeNode("education","B.A., Communication"));
+function getEl(id) {
+  return document.getElementById("n-" + id);
 }
 
-/* ---------- Reset ---------- */
-function reset(){
-buildGraph();
-buildResume();
-state=newState();
-render();
-updateBest();
-document.getElementById("report").innerHTML="";
-}
-document.getElementById("resetBtn").onclick=reset;
+function render() {
+  // Reset all visible nodes
+  const allIds = Object.keys(nodeInfo);
+  allIds.forEach(id => {
+    const el = getEl(id);
+    if (!el) return;
+    el.className = "node disabled";
+  });
 
-/* ---------- Init ---------- */
+  // Visited
+  state.visited.forEach(id => {
+    const el = getEl(id);
+    if (!el) return;
+    const info = nodeInfo[id];
+    if (info && info.isTrap) {
+      el.className = "node trap-visited";
+    } else {
+      el.className = "node visited";
+    }
+  });
+
+  // Current
+  const curEl = getEl(state.current);
+  if (curEl) curEl.className = "node current";
+
+  // Available
+  (graph[state.current] || []).forEach(id => {
+    const el = getEl(id);
+    if (!el) return;
+    if (!state.visited.has(id)) {
+      el.className = "node available";
+    }
+  });
+
+  // UI
+  document.getElementById("moveCount").textContent = state.moves;
+  document.getElementById("scoreVal").textContent = getScore();
+  document.getElementById("trapCount").textContent = state.trapsHit;
+  document.getElementById("pathText").textContent = state.path.join(" → ");
+
+  // Progress
+  const allSteps = NODE_STEPS.length;
+  const prog = (state.path.filter(id => NODE_STEPS.includes(id)).length / allSteps) * 100;
+  document.getElementById("progressFill").style.width = Math.min(100, prog) + "%";
+}
+
+function updateTip(id, shook) {
+  const box = document.getElementById("tipBox");
+  const info = nodeInfo[id];
+  if (!info) return;
+
+  if (info.isTrap) {
+    const td = TRAP_DATA[info.trapType];
+    box.className = "tip-inner trap-tip";
+    box.innerHTML = `<div class="tip-label trap-label">${td.label} — ATS Pitfall!</div>${td.tip}`;
+  } else if (id.startsWith("exp_b")) {
+    const bd = BACKBONE_DATA.find(b => b.id === id);
+    box.className = "tip-inner good-tip";
+    box.innerHTML = `<div class="tip-label good-label">Best Practice Unlocked</div>${bd ? bd.tip : ""}`;
+  } else if (SECTION_TIPS[id]) {
+    box.className = "tip-inner good-tip";
+    box.innerHTML = `<div class="tip-label good-label">Section Guide</div>${SECTION_TIPS[id]}`;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   MOVE
+═══════════════════════════════════════════ */
+function move(id) {
+  if (!graph[state.current] || !graph[state.current].includes(id)) return;
+  if (state.complete) return;
+
+  state.moves++;
+  state.current = id;
+  state.visited.add(id);
+  state.path.push(id);
+
+  if (nodeInfo[id].isTrap) {
+    state.trapsHit++;
+    const el = getEl(id);
+    if (el) {
+      el.classList.add("shaking");
+      setTimeout(() => el.classList.remove("shaking"), 400);
+    }
+  }
+
+  updateTip(id);
+  render();
+
+  if (id === "education") {
+    state.complete = true;
+    setTimeout(showFinish, 600);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   FINISH
+═══════════════════════════════════════════ */
+function showFinish() {
+  const score = getScore();
+  const best = getBest();
+  const isNew = best === null || score > best;
+  if (isNew) setBest(score);
+  updateBestDisplay();
+
+  const el = document.getElementById("finishScore");
+  el.textContent = score;
+  el.className = "finish-score" + (score >= 80 ? "" : score >= 50 ? " mid" : " low");
+
+  const grades = score >= 90 ? "ATS Champion! Recruiters will love this resume." :
+                 score >= 75 ? "Strong run. A few detours cost you — tighten those bullets." :
+                 score >= 55 ? "Decent foundation, but trap-heavy. Review the pitfall tips." :
+                 "Needs work. The ATS would have binned this one. Try again!";
+
+  document.getElementById("gradeMsg").textContent = grades;
+
+  const trapNames = [...state.visited]
+    .filter(id => nodeInfo[id] && nodeInfo[id].isTrap)
+    .map(id => TRAP_DATA[nodeInfo[id].trapType].label);
+
+  document.getElementById("finishDetails").innerHTML = `
+    <span class="hl">Moves:</span> ${state.moves} &nbsp;|&nbsp;
+    <span class="hl">Traps hit:</span> <span class="${state.trapsHit ? "trap-hl" : "hl"}">${state.trapsHit}</span><br>
+    ${trapNames.length ? `Pitfalls: <span class="trap-hl">${trapNames.join(", ")}</span><br>` : ""}
+    ${isNew ? `<span style="color:var(--gold)">✦ New personal best!</span>` : `Best: ${best}`}
+  `;
+
+  document.getElementById("finishOverlay").classList.add("show");
+}
+
+/* ═══════════════════════════════════════════
+   DOM BUILD — called after graph is built
+═══════════════════════════════════════════ */
+function buildDOM() {
+  // Backbone bullets
+  const ul = document.getElementById("backboneBullets");
+  ul.innerHTML = "";
+  BACKBONE_DATA.forEach(b => {
+    const li = document.createElement("li");
+    const span = document.createElement("span");
+    span.id = "n-" + b.id;
+    span.className = "node disabled";
+    span.textContent = b.bullet;
+    span.onclick = () => move(b.id);
+    li.appendChild(span);
+    ul.appendChild(li);
+  });
+
+  // Detour nodes
+  const dz = document.getElementById("detourNodes");
+  dz.innerHTML = "";
+  detourIds.forEach(id => {
+    const span = document.createElement("span");
+    span.id = "n-" + id;
+    span.className = "node disabled";
+    span.textContent = nodeInfo[id].label;
+    span.onclick = () => move(id);
+    dz.appendChild(span);
+  });
+
+  // Wire up static nodes (already in HTML)
+  [
+    "header","summary","skills","exp_entry",
+    "projects","certifications","education"
+  ].forEach(id => {
+    const el = document.getElementById("n-" + id);
+    if (el) el.onclick = () => move(id);
+  });
+
+  // exp_entry has no separate element in the resume — wire to clicking Experience section
+  // We use the experience section title click as exp_entry — or just make exp_entry = skills link to exp_b1 directly
+}
+
+/* ═══════════════════════════════════════════
+   PERSIST
+═══════════════════════════════════════════ */
+function getBest() {
+  try { const r = localStorage.getItem(BEST_KEY); return r ? Number(r) : null; } catch { return null; }
+}
+function setBest(s) {
+  try { const b = getBest(); if (b === null || s > b) localStorage.setItem(BEST_KEY, String(s)); } catch {}
+}
+function updateBestDisplay() {
+  document.getElementById("bestScore").textContent = getBest() ?? "—";
+}
+
+/* ═══════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════ */
+function reset() {
+  document.getElementById("finishOverlay").classList.remove("show");
+  buildGraph();
+  buildDOM();
+  state = newState();
+  render();
+  updateBestDisplay();
+
+  // Reset tip
+  const box = document.getElementById("tipBox");
+  box.className = "tip-inner";
+  box.innerHTML = `<div class="tip-label info-label">How to play</div>
+    Click any <strong style="color:var(--accent)">glowing node</strong> to move through the resume. Backbone nodes teach ATS best practices. Detour nodes in the Experience section are traps — each costs <strong>8 points</strong>. Reach Education with the highest score!`;
+}
+
+document.getElementById("resetBtn").onclick = reset;
+document.getElementById("finishReset").onclick = reset;
+
+// Note: exp_entry just feeds into the backbone. Since it has no separate visible element
+// in the resume, we make "skills" connect directly to exp_b1 AND exp detours via exp_entry invisibly.
+// Patch: when skills is clicked, it moves to exp_entry, then next click goes to exp_b1.
+// To keep UX smooth, wire exp_entry el to the section.
+
 reset();
 </script>
 </body>
