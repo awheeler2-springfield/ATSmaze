@@ -1,275 +1,241 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze — Prototype A</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ATS Resume Maze — Modular Prototype</title>
 
 <style>
-:root{
-  --bg:#f3f3f3;
-  --paper:#fff;
-  --ink:#111;
-  --ui:#ddd;
-  --yellow:#ffe86a;
-  --red:#ff8a8a;
-}
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    display: flex;
+    height: 100vh;
+  }
 
-body{
-  margin:0;
-  background:var(--bg);
-  font-family: Georgia, "Times New Roman", serif;
-  color:var(--ink);
-}
+  /* Left Instruction Rail */
+  #rail {
+    width: 260px;
+    background: #1D3461;
+    color: white;
+    padding: 20px;
+    box-sizing: border-box;
+  }
 
-.rail{
-  position:fixed;
-  left:0; top:0;
-  width:300px;
-  height:100vh;
-  background:#fff;
-  border-right:1px solid var(--ui);
-  padding:14px;
-  overflow:auto;
-}
+  #rail h2 {
+    margin-top: 0;
+  }
 
-.rail h2{ margin:0 0 10px; font-size:16px; }
+  #rail p {
+    margin: 8px 0;
+  }
 
-.page{
-  margin-left:300px;
-  padding:30px 20px;
-}
+  /* Maze Area */
+  #maze {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 150px);
+    grid-template-rows: repeat(3, 120px);
+    gap: 20px;
+    justify-content: center;
+    align-content: center;
+    background: #f5f5f5;
+  }
 
-.resume{
-  max-width:900px;
-  margin:0 auto;
-  background:#fff;
-  padding:50px 70px;
-  box-shadow:0 2px 14px rgba(0,0,0,.08);
-}
+  .node {
+    background: white;
+    border: 2px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-align: center;
+    padding: 10px;
+    font-weight: bold;
+    transition: 0.2s ease;
+  }
 
-.section{ margin-top:28px; }
+  .node:hover {
+    border-color: #1D3461;
+  }
 
-.section-title{
-  font-weight:bold;
-  border-bottom:1px solid #000;
-  padding-bottom:4px;
-  margin-bottom:10px;
-}
+  .visited {
+    background: #FFFBF0;
+    border-color: #C96A00;
+  }
 
-.node{
-  display:inline-block;
-  padding:2px 3px;
-  border-radius:2px;
-  cursor:pointer;
-}
-
-.active{ background:var(--yellow); }
-.visited{ background:var(--yellow); opacity:.9; }
-.bad{ background:var(--red); }
-
-ul{ margin-left:22px; }
+  .current {
+    background: #F0FAFB;
+    border-color: #0A6E6E;
+  }
 </style>
 </head>
+
 <body>
 
-<div class="rail">
+<!-- Instruction Rail -->
+<div id="rail">
   <h2>ATS Resume Maze</h2>
-  <p>
-    Click adjacent words to move.<br><br>
-    Order:<br>
-    SUMMARY → SKILLS → EXPERIENCE → EDUCATION
-  </p>
-  <p id="stats">Moves: 0 | ATS Hits: 0 | Score: 100</p>
-  <div id="report"></div>
-  <button onclick="reset()">New Round</button>
+  <p><strong>Moves:</strong> <span id="moveCount">0</span></p>
+  <p><strong>Trap Hits:</strong> <span id="trapCount">0</span></p>
+  <p><strong>Score:</strong> <span id="score">100</span></p>
+  <hr />
+  <p id="completionMessage"></p>
 </div>
 
-<div class="page">
-<div class="resume">
-
-<div class="section">
-  <div class="section-title">HEADER</div>
-  <p id="header"></p>
+<!-- Maze Grid -->
+<div id="maze">
+  <div class="node" id="header">Header</div>
+  <div class="node" id="summary">Summary</div>
+  <div class="node" id="skills">Skills</div>
+  <div class="node" id="experience_1">Experience 1</div>
+  <div class="node" id="experience_2">Experience 2</div>
+  <div class="node" id="projects">Projects</div>
+  <div class="node" id="certifications">Certifications</div>
+  <div class="node" id="education">Education</div>
 </div>
 
-<div class="section">
-  <div class="section-title">SUMMARY</div>
-  <p id="summary"></p>
-</div>
+<script type="module">
 
-<div class="section">
-  <div class="section-title">SKILLS</div>
-  <p id="skills"></p>
-</div>
+/* =========================
+   GRAPH MODULE
+========================= */
 
-<div class="section">
-  <div class="section-title">PROFESSIONAL EXPERIENCE</div>
-  <p id="experience"></p>
-</div>
+const graph = {
+  header: ["summary"],
+  summary: ["header", "skills"],
+  skills: ["summary", "experience_1"],
+  experience_1: ["skills", "experience_2"],
+  experience_2: ["experience_1", "projects"],
+  projects: ["experience_2", "certifications"],
+  certifications: ["projects", "education"],
+  education: ["certifications"]
+};
 
-<div class="section">
-  <div class="section-title">EDUCATION</div>
-  <p id="education"></p>
-</div>
+const traps = new Set([
+  "experience_2" // Example ATS trap
+]);
 
-</div>
-</div>
-
-<script>
-let nodes = [];
-let edges = new Map();
-let current = null;
-let moves = 0;
-let hits = 0;
-let stageOrder = ["summary","skills","experience","education"];
-let stageIndex = 0;
-
-/* ---------- GRAPH ENGINE ---------- */
-
-function addNode(el, section, trap=false){
-  const id = nodes.length;
-  el.dataset.id = id;
-  nodes.push({id, section, trap});
-  el.addEventListener("click",()=>handleClick(id));
-  return id;
-}
-
-function connect(a,b){
-  if(!edges.has(a)) edges.set(a,new Set());
-  if(!edges.has(b)) edges.set(b,new Set());
-  edges.get(a).add(b);
-  edges.get(b).add(a);
-}
-
-function handleClick(id){
-  if(current===null){
-    activate(id);
-    return;
-  }
-  if(edges.get(current)?.has(id)){
-    moveTo(id);
+function validateGraph(graph) {
+  for (const node in graph) {
+    graph[node].forEach(neighbor => {
+      if (!graph[neighbor] || !graph[neighbor].includes(node)) {
+        throw new Error(`Asymmetric edge: ${node} ↔ ${neighbor}`);
+      }
+    });
   }
 }
 
-function moveTo(id){
-  moves++;
-  activate(id);
+validateGraph(graph);
 
-  if(nodes[id].trap){
-    document.querySelector(`[data-id="${id}"]`).classList.add("bad");
-    hits++;
+
+/* =========================
+   STATE MODULE
+========================= */
+
+function createInitialState() {
+  return {
+    currentNode: "header",
+    visited: new Set(["header"]),
+    moves: 0,
+    trapsHit: 0,
+    complete: false
+  };
+}
+
+const state = createInitialState();
+
+
+/* =========================
+   ENGINE MODULE
+========================= */
+
+function attemptMove(state, targetNode) {
+  if (state.complete) return { success: false };
+
+  const neighbors = graph[state.currentNode];
+
+  if (!neighbors.includes(targetNode)) {
+    return { success: false };
   }
 
-  if(nodes[id].section===stageOrder[stageIndex]){
-    stageIndex++;
+  state.moves++;
+
+  if (traps.has(targetNode)) {
+    state.trapsHit++;
   }
 
-  updateStats();
-  checkComplete();
+  state.currentNode = targetNode;
+  state.visited.add(targetNode);
+
+  if (targetNode === "education") {
+    state.complete = true;
+  }
+
+  return { success: true };
 }
 
-function activate(id){
-  document.querySelectorAll(".active").forEach(e=>e.classList.remove("active"));
-  const el=document.querySelector(`[data-id="${id}"]`);
-  el.classList.add("active","visited");
-  current=id;
+function calculateScore(state) {
+  return Math.max(
+    0,
+    100 - state.moves - (state.trapsHit * 10)
+  );
 }
 
-function updateStats(){
-  let score=Math.max(0,100 - hits*10 - Math.floor(moves/4));
-  document.getElementById("stats").textContent=
-    `Moves: ${moves} | ATS Hits: ${hits} | Score: ${score}`;
+
+/* =========================
+   RENDERER MODULE
+========================= */
+
+function render(state) {
+  document.querySelectorAll(".node").forEach(el => {
+    el.classList.remove("visited", "current");
+  });
+
+  state.visited.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("visited");
+  });
+
+  const currentEl = document.getElementById(state.currentNode);
+  if (currentEl) currentEl.classList.add("current");
 }
 
-function checkComplete(){
-  if(nodes[current].section==="education"){
-    document.getElementById("report").innerHTML=
-      `<h3>Resume Analysis</h3>
-       <p>Completed in ${moves} moves.</p>
-       <p>ATS traps triggered: ${hits}.</p>`;
+
+/* =========================
+   RAIL MODULE
+========================= */
+
+function updateRail(state) {
+  document.getElementById("moveCount").textContent = state.moves;
+  document.getElementById("trapCount").textContent = state.trapsHit;
+  document.getElementById("score").textContent = calculateScore(state);
+
+  if (state.complete) {
+    document.getElementById("completionMessage").textContent =
+      "Resume optimized. ATS pathway successful.";
   }
 }
 
-/* ---------- BUILD STRUCTURE ---------- */
 
-function build(){
-  nodes=[]; edges.clear();
-  moves=0; hits=0; stageIndex=0; current=null;
-  document.getElementById("report").innerHTML="";
+/* =========================
+   MAIN WIRING
+========================= */
 
-  /* HEADER */
-  const header=document.getElementById("header");
-  header.innerHTML="";
-  let first = header.appendChild(span("FIRST"));
-  let last  = header.appendChild(span("LAST"));
-  let idFirst = addNode(first,"header");
-  let idLast  = addNode(last,"header");
-  connect(idFirst,idLast);
+render(state);
+updateRail(state);
 
-  /* SUMMARY */
-  const summary=document.getElementById("summary");
-  summary.innerHTML="";
-  let s1 = summary.appendChild(span("Data-driven"));
-  let s2 = summary.appendChild(span("analytics"));
-  let s3 = summary.appendChild(span("professional"));
-  let idS1 = addNode(s1,"summary");
-  let idS2 = addNode(s2,"summary");
-  let idS3 = addNode(s3,"summary");
+document.querySelectorAll(".node").forEach(node => {
+  node.addEventListener("click", () => {
+    const result = attemptMove(state, node.id);
 
-  connect(idLast,idS1);
-  connect(idS1,idS2);
-  connect(idS2,idS3);
+    if (result.success) {
+      render(state);
+      updateRail(state);
+    }
+  });
+});
 
-  /* SKILLS */
-  const skills=document.getElementById("skills");
-  skills.innerHTML="";
-  let ga4 = skills.appendChild(span("GA4"));
-  let seo = skills.appendChild(span("SEO"));
-  let bars = skills.appendChild(span("Skill-Bars"));
-  let idGA4 = addNode(ga4,"skills");
-  let idSEO = addNode(seo,"skills");
-  let idBars = addNode(bars,"skills",true);
-
-  connect(idS3,idGA4);
-  connect(idGA4,idSEO);
-  connect(idSEO,idBars);
-
-  /* EXPERIENCE */
-  const exp=document.getElementById("experience");
-  exp.innerHTML="";
-  let opt = exp.appendChild(span("Optimized"));
-  let camp = exp.appendChild(span("campaigns"));
-  let table = exp.appendChild(span("TABLE"));
-  let idOpt = addNode(opt,"experience");
-  let idCamp = addNode(camp,"experience");
-  let idTable = addNode(table,"experience",true);
-
-  connect(idSEO,idOpt);
-  connect(idOpt,idCamp);
-  connect(idCamp,idTable);
-
-  /* EDUCATION */
-  const edu=document.getElementById("education");
-  edu.innerHTML="";
-  let ba = edu.appendChild(span("B.A."));
-  let idBA = addNode(ba,"education");
-
-  connect(idCamp,idBA);
-
-  updateStats();
-}
-
-function span(text){
-  let s=document.createElement("span");
-  s.className="node";
-  s.textContent=text+" ";
-  return s;
-}
-
-function reset(){ build(); }
-
-build();
 </script>
 
 </body>
