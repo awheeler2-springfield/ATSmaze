@@ -1,8 +1,134 @@
-<script>
-/* ==============================
-   STATE
-==============================*/
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ATS Resume Maze (Stable Version)</title>
 
+<style>
+:root{
+  --bg:#f3f3f3;
+  --paper:#fff;
+  --ink:#111;
+  --ui:#ddd;
+  --yellow:#ffe86a;
+  --red:#ff8a8a;
+  --blue:#cfe8ff;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  font-family: Georgia, "Times New Roman", serif;
+  color:var(--ink);
+}
+
+/* Sidebar */
+.rail{
+  position:fixed;
+  left:0; top:0;
+  width:300px;
+  height:100vh;
+  background:#fff;
+  border-right:1px solid var(--ui);
+  padding:14px;
+  overflow:auto;
+}
+.rail h2{ margin:0 0 10px; font-size:16px; }
+
+.page{
+  margin-left:300px;
+  padding:30px 20px;
+}
+
+.resume{
+  max-width:960px;
+  margin:0 auto;
+  background:#fff;
+  padding:50px 70px;
+  box-shadow:0 2px 14px rgba(0,0,0,.08);
+}
+
+.section{ margin-top:28px; }
+.section-title{
+  font-weight:bold;
+  border-bottom:1px solid #000;
+  padding-bottom:4px;
+  margin-bottom:10px;
+}
+
+.node{
+  display:inline-block;
+  padding:2px 3px;
+  border-radius:2px;
+  cursor:pointer;
+}
+
+.active{ background:var(--yellow); }
+.visited{ background:var(--yellow); opacity:.9; }
+.bad{ background:var(--red); }
+.neighbor{ background:var(--blue); }
+
+ul{ margin-left:22px; }
+button{ margin-top:10px; padding:6px 10px; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div class="rail">
+  <h2>ATS Resume Maze</h2>
+  <p>
+    Click adjacent words to move.<br><br>
+    Move in order:<br>
+    SUMMARY → SKILLS → EXPERIENCE → PROJECTS → CERTIFICATIONS → EDUCATION
+  </p>
+  <p id="stats">Moves: 0 | Trap Hits: 0 | Section: 0/6 | Score: 100</p>
+  <div id="report"></div>
+  <button onclick="reset()">New Round</button>
+</div>
+
+<div class="page">
+<div class="resume" id="resume">
+
+<div class="section">
+  <div class="section-title">HEADER</div>
+  <p id="header"></p>
+</div>
+
+<div class="section" data-sec="summary">
+  <div class="section-title">SUMMARY</div>
+  <p id="summary"></p>
+</div>
+
+<div class="section" data-sec="skills">
+  <div class="section-title">SKILLS</div>
+  <p id="skills"></p>
+</div>
+
+<div class="section" data-sec="experience">
+  <div class="section-title">PROFESSIONAL EXPERIENCE</div>
+  <div id="experience"></div>
+</div>
+
+<div class="section" data-sec="projects">
+  <div class="section-title">PROJECTS</div>
+  <ul id="projects"></ul>
+</div>
+
+<div class="section" data-sec="certifications">
+  <div class="section-title">CERTIFICATIONS</div>
+  <p id="certifications"></p>
+</div>
+
+<div class="section" data-sec="education">
+  <div class="section-title">EDUCATION</div>
+  <p id="education"></p>
+</div>
+
+</div>
+</div>
+
+<script>
 let nodes = [];
 let edges = new Map();
 let current = null;
@@ -11,14 +137,10 @@ let trapHits = 0;
 let stageOrder = ["summary","skills","experience","projects","certifications","education"];
 let stageIndex = 0;
 
-/* ==============================
-   NODE + EDGE ENGINE
-==============================*/
-
-function addNode(el,x,y,section,trap=false,type="format"){
+function addNode(el,section,trap=false){
   const id = nodes.length;
   el.dataset.id = id;
-  nodes.push({id,x,y,section,trap,type});
+  nodes.push({id,section,trap});
   el.addEventListener("click",()=>handleClick(id));
 }
 
@@ -32,6 +154,7 @@ function connect(a,b){
 function handleClick(id){
   if(current===null){
     activate(id);
+    highlightNeighbors();
     return;
   }
   if(edges.get(current)?.has(id)){
@@ -39,16 +162,11 @@ function handleClick(id){
   }
 }
 
-/* ==============================
-   MOVE LOGIC
-==============================*/
-
 function moveTo(id){
   moves++;
   activate(id);
 
   const node = nodes[id];
-
   if(node.trap){
     document.querySelector(`[data-id="${id}"]`).classList.add("bad");
     trapHits++;
@@ -59,8 +177,8 @@ function moveTo(id){
   }
 
   updateStats();
-  checkComplete();
   highlightNeighbors();
+  checkComplete();
 }
 
 function activate(id){
@@ -78,17 +196,13 @@ function highlightNeighbors(){
   });
 }
 
-/* ==============================
-   SCORING
-==============================*/
-
 function updateStats(){
   let structuralPenalty = Math.floor(moves/6);
   let trapPenalty = trapHits * 12;
   let score = Math.max(0, 100 - structuralPenalty - trapPenalty);
 
   document.getElementById("stats").textContent =
-    `Moves: ${moves} | Trap Hits: ${trapHits} | Section: ${stageIndex}/${stageOrder.length} | Score: ${score}`;
+    `Moves: ${moves} | Trap Hits: ${trapHits} | Section: ${stageIndex}/6 | Score: ${score}`;
 }
 
 function checkComplete(){
@@ -97,18 +211,10 @@ function checkComplete(){
       `<h3>ATS Analysis</h3>
        <p>Total Moves: ${moves}</p>
        <p>Trap Hits: ${trapHits}</p>
-       <p>Interpretation:</p>
-       <ul>
-         <li>High moves = structural inefficiency</li>
-         <li>Trap hits = formatting interference</li>
-         <li>Section order compliance improves ATS clarity</li>
-       </ul>`;
+       <p>High moves indicate structural inefficiency.</p>
+       <p>Trap hits simulate formatting errors (tables, graphics).</p>`;
   }
 }
-
-/* ==============================
-   BUILD
-==============================*/
 
 function build(){
   nodes=[];
@@ -131,46 +237,44 @@ function build(){
 function buildHeader(){
   const header=document.getElementById("header");
   header.innerHTML="";
-  let a=span("FIRST"); header.appendChild(a); addNode(a,0,0,"header");
-  let b=span("LAST"); header.appendChild(b); addNode(b,1,0,"header");
+  let a=span("FIRST"); header.appendChild(a); addNode(a,"header");
+  let b=span("LAST"); header.appendChild(b); addNode(b,"header");
   connect(0,1);
 }
 
 function buildSummary(){
   const el=document.getElementById("summary");
   el.innerHTML="";
-  let a=span("Data-driven"); el.appendChild(a); addNode(a,0,1,"summary");
-  let b=span("analytics"); el.appendChild(b); addNode(b,1,1,"summary");
-  let c=span("professional"); el.appendChild(c); addNode(c,2,1,"summary");
-  connect(nodes.length-3,nodes.length-2);
-  connect(nodes.length-2,nodes.length-1);
+  let a=span("Data-driven"); el.appendChild(a); addNode(a,"summary");
+  let b=span("analytics"); el.appendChild(b); addNode(b,"summary");
+  let c=span("professional"); el.appendChild(c); addNode(c,"summary");
+  connect(2,3); connect(3,4);
 }
 
 function buildSkills(){
   const el=document.getElementById("skills");
   el.innerHTML="";
-  let a=span("GA4"); el.appendChild(a); addNode(a,0,2,"skills");
-  let b=span("SEO"); el.appendChild(b); addNode(b,1,2,"skills");
-  let c=span("Skill-Bars"); el.appendChild(c); addNode(c,2,2,"skills",true,"format");
-  connect(nodes.length-3,nodes.length-2);
-  connect(nodes.length-2,nodes.length-1);
+  let a=span("GA4"); el.appendChild(a); addNode(a,"skills");
+  let b=span("SEO"); el.appendChild(b); addNode(b,"skills");
+  let c=span("Skill-Bars"); el.appendChild(c); addNode(c,"skills",true);
+  connect(5,6); connect(6,7);
 }
 
 function buildExperience(){
   const exp=document.getElementById("experience");
   exp.innerHTML="";
-  let idStart=nodes.length;
+  let start=nodes.length;
+  let gridSize=6;
 
-  let gridSize=6; // reduced for performance
   for(let y=0;y<gridSize;y++){
     for(let x=0;x<gridSize;x++){
       let word = Math.random()<0.2 ? "TABLE" : "optimized";
       let trap = word==="TABLE";
       let sp=span(word);
       exp.appendChild(sp);
-      addNode(sp,x,y+4,"experience",trap,"format");
+      addNode(sp,"experience",trap);
 
-      let id = idStart + y*gridSize + x;
+      let id=start + y*gridSize + x;
       if(x>0) connect(id-1,id);
       if(y>0) connect(id-gridSize,id);
     }
@@ -181,7 +285,7 @@ function buildExperience(){
 function buildEducation(){
   const edu=document.getElementById("education");
   edu.innerHTML="";
-  let e1=span("B.A."); edu.appendChild(e1); addNode(e1,0,20,"education");
+  let e1=span("B.A."); edu.appendChild(e1); addNode(e1,"education");
 }
 
 function span(text){
@@ -195,3 +299,6 @@ function reset(){ build(); }
 
 build();
 </script>
+
+</body>
+</html>
