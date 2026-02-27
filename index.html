@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ATS Word Maze</title>
+<style>
+  :root{
+    --bg:#fff; --ink:#111; --rule:#d6d6d6;
+    --yellow:#ffe86a; --yellow-border:#d1c25d;
+    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  }
+  body{ margin:0; font-family:var(--font); background:var(--bg); color:var(--ink); }
+  .wrap{ max-width:980px; margin:0 auto; padding:16px; }
+  h1{ margin:0 0 8px; font-size:18px; }
+  .sub{ margin:0 0 12px; color:#444; font-size:13px; line-height:1.35; }
+  .bar{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+  button{
+    border:1px solid var(--rule); background:#fff; color:#111;
+    border-radius:12px; padding:10px 12px; cursor:pointer; font-size:14px;
+  }
+  .pill{ border:1px solid var(--rule); border-radius:999px; padding:8px 10px; font-size:13px; color:#444; }
+
+  /* Maze */
+  .maze{
+    border:1px solid var(--rule);
+    border-radius:14px;
+    padding:12px;
+    background:#fff;
+    overflow:auto;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(16, minmax(52px, 1fr));
+    gap:6px;
+  }
+
+  .cell{
+    position:relative;
+    border:1px solid var(--rule);
+    border-radius:10px;
+    min-height:44px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:6px;
+    font-size:12px;
+    line-height:1.1;
+    user-select:none;
+    outline:none;
+  }
+  .wall{
+    background:#fff;
+    border-color:#111;
+  }
+  .path{
+    background:#fff;
+    cursor:pointer;
+  }
+  .cell.current,
+  .cell.visited{
+    background:var(--yellow);
+    border-color:var(--yellow-border);
+  }
+  .cell.start{ border:2px solid #111; }
+  .cell.end{ border:2px dashed #111; }
+
+  /* Tooltip as real DOM (survives LMS better than ::after) */
+  .tip{
+    display:none;
+    position:absolute;
+    left:8px;
+    top:calc(100% + 8px);
+    width:240px;
+    background:#fff;
+    border:1px solid var(--rule);
+    border-radius:12px;
+    padding:10px;
+    font-size:12px;
+    line-height:1.3;
+    z-index:50;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+  }
+  .cell.bad .tip{ /* keep hidden until hover/focus */
+    display:none;
+  }
+  .cell.bad:hover .tip,
+  .cell.bad:focus .tip,
+  .cell.bad:focus-within .tip{
+    display:block;
+  }
+
+  .status{
+    margin-top:12px;
+    border:1px solid var(--rule);
+    border-radius:12px;
+    padding:10px 12px;
+    font-size:13px;
+    color:#444;
+  }
+  .status strong{ color:#111; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ATS Word Maze</h1>
+  <p class="sub">
+    Arrow keys move through the resume “corridors.” Yellow shows your path.
+    Hover/focus a dotted-underlined “bad” term to see why it’s not ATS-friendly.
+    Press <strong>Enter</strong> to “lock in” a good tile.
+  </p>
+
+  <div class="bar">
+    <button id="newBtn" type="button">New Maze</button>
+    <button id="resetBtn" type="button">Reset</button>
+    <span class="pill" id="roundPill">Round: 1</span>
+    <span class="pill" id="movesPill">Moves: 0</span>
+  </div>
+
+  <div class="maze" aria-label="Word maze">
+    <div id="grid" class="grid" role="grid" aria-label="Maze grid"></div>
+  </div>
+
+  <div class="status" id="status" role="status" aria-live="polite">
+    <strong>Goal:</strong> Start at Address and reach Education by navigating around ATS pitfalls.
+  </div>
+</div>
+
+<script>
+/*
+  NOTE: This is a prototype maze generator:
+  - Walls are black-outlined empty blocks.
+  - Path cells have words (ATS good/bad).
+  - Player moves with arrows only into path cells.
+  - Tooltips appear only on hover/focus for "bad" cells.
+*/
+
+const W = 16, H = 16;
+
+const VARIANTS = [
+  {
+    startWord: "Address",
+    endWord: "Education",
+    goodWords: [
+      "Summary","Skills","GA4","WordPress","SEO","Python","Metrics","Experience",
+      "MM/YYYY","Results","Stakeholders","Accessibility","Keywords","Tools"
+    ],
+    badWords: [
+      { w:"Icons", tip:"ATS risk: icon-only labels may not parse. Use text labels." },
+      { w:"Two-Column", tip:"ATS risk: columns can scramble reading order. Prefer one column." },
+      { w:"Text Box", tip:"ATS risk: text boxes/shapes may not parse reliably." },
+      { w:"Script Font", tip:"ATS risk: decorative fonts can misread. Use standard fonts." },
+      { w:"Graphic Bars", tip:"ATS risk: skill charts/images aren’t reliably readable." }
+    ]
+  },
+  {
+    startWord: "Address",
+    endWord: "Education",
+    goodWords: [
+      "Experience","Campaigns","Analytics","CTR","Engagement","Content","CMS",
+      "SEO","Accessibility","Keywords","Outcomes","Leadership","Templates"
+    ],
+    badWords: [
+      { w:"Infographic", tip:"ATS risk: image-based resumes don’t parse reliably." },
+      { w:"Fancy Heading", tip:"ATS risk: nonstandard headings reduce parser accuracy." },
+      { w:"Keyword Spam", tip:"ATS risk: stuffing reads as spam; keep keywords contextual." },
+      { w:"Tables", tip:"ATS risk: complex tables can break reading order." }
+    ]
+  }
+];
+
+let round = 1, moves = 0;
+let grid = [];
+let cur = {x:0,y:0};
+let visited = new Set();
+
+const gridEl = document.getElementById("grid");
+const statusEl = document.getElementById("status");
+const roundPill = document.getElementById("roundPill");
+const movesPill = document.getElementById("movesPill");
+
+document.getElementById("newBtn").addEventListener("click", () => {
+  round++; build();
+});
+document.getElementById("resetBtn").addEventListener("click", () => reset());
+
+window.addEventListener("keydown", (e) => {
+  const k = e.key;
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter"].includes(k)){
+    e.preventDefault();
+  }
+  if(k === "ArrowUp")  step(0,-1);
+  if(k === "ArrowDown")step(0, 1);
+  if(k === "ArrowLeft")step(-1,0);
+  if(k === "ArrowRight")step(1, 0);
+  if(k === "Enter") lockIn();
+}, {passive:false});
+
+function setStatus(html){ statusEl.innerHTML = html; }
+function updateHUD(){
+  roundPill.textContent = `Round: ${round}`;
+  movesPill.textContent = `Moves: ${moves}`;
+}
+
+function build(){
+  moves = 0;
+  visited.clear();
+  updateHUD();
+
+  const v = VARIANTS[(round-1) % VARIANTS.length];
+
+  // 1) Make a perfect maze of "walkable" cells using a simple DFS on a coarse grid,
+  // then map it into a wall/path representation. Here: simpler—pre-carve a guaranteed path.
+  grid = Array.from({length:H}, () => Array.from({length:W}, () => ({ type:"wall", word:"", tip:"" })));
+
+  // Carve a guaranteed snake path from (0,0) to (W-1,H-1)
+  let x=0, y=0;
+  const pathCells = [{x,y}];
+  for(let row=0; row<H; row++){
+    if(row%2===0){
+      while(x < W-1){ x++; pathCells.push({x,y:row}); }
+    } else {
+      while(x > 0){ x--; pathCells.push({x,y:row}); }
+    }
+    if(row < H-1){ y = row+1; pathCells.push({x, y}); }
+  }
+
+  // Turn a subset into walkable corridors; leave others as walls to look like a maze
+  for(const p of pathCells){
+    grid[p.y][p.x].type = "path";
+  }
+
+  // Add some random extra corridors to make it less “single path”
+  for(let i=0;i<60;i++){
+    const rx = Math.floor(Math.random()*W);
+    const ry = Math.floor(Math.random()*H);
+    grid[ry][rx].type = "path";
+  }
+
+  // Place start/end
+  grid[0][0] = { type:"path", word:v.startWord, tip:"", role:"start", quality:"good" };
+  grid[H-1][W-1] = { type:"path", word:v.endWord, tip:"", role:"end", quality:"good" };
+
+  // Fill other path cells with good/bad words
+  const goods = shuffle(v.goodWords.slice());
+  const bads = shuffle(v.badWords.slice());
+
+  for(let yy=0; yy<H; yy++){
+    for(let xx=0; xx<W; xx++){
+      const cell = grid[yy][xx];
+      if(cell.type !== "path") continue;
+      if(xx===0 && yy===0) continue;
+      if(xx===W-1 && yy===H-1) continue;
+
+      // Sprinkle bad terms as “obstacles”
+      const useBad = Math.random() < 0.18 && bads.length;
+      if(useBad){
+        const b = bads.pop();
+        grid[yy][xx] = { type:"path", word:b.w, tip:b.tip, quality:"bad" };
+      } else {
+        const w = goods.length ? goods.pop() : "ATS";
+        grid[yy][xx] = { type:"path", word:w, tip:"", quality:"good" };
+      }
+    }
+  }
+
+  cur = {x:0,y:0};
+  visited.add(key(cur.x,cur.y));
+  render();
+  setStatus(`<strong>Start:</strong> Address (top-left). Navigate to Education (bottom-right).`);
+}
+
+function reset(){
+  moves = 0;
+  visited.clear();
+  cur = {x:0,y:0};
+  visited.add(key(0,0));
+  updateHUD();
+  render();
+  setStatus(`<strong>Reset.</strong> Start at Address.`);
+}
+
+function key(x,y){ return `${x},${y}`; }
+function inBounds(x,y){ return x>=0 && x<W && y>=0 && y<H; }
+
+function step(dx,dy){
+  const nx = cur.x + dx;
+  const ny = cur.y + dy;
+  if(!inBounds(nx,ny)) return;
+
+  const next = grid[ny][nx];
+  if(next.type !== "path") return; // wall
+  cur = {x:nx,y:ny};
+  moves++;
+  visited.add(key(nx,ny));
+  updateHUD();
+  render();
+
+  if(nx===W-1 && ny===H-1){
+    setStatus(`✅ Completed in <strong>${moves}</strong> moves. Click <strong>New Maze</strong> to play again.`);
+  }
+}
+
+function lockIn(){
+  // Optional: could require locking in only "good" tiles; for now, just provide feedback
+  const c = grid[cur.y][cur.x];
+  if(c.quality === "bad"){
+    setStatus(`This tile is an ATS pitfall: <strong>${c.word}</strong>. Hover/focus it to read why, then route around it.`);
+  } else {
+    setStatus(`Locked in: <strong>${c.word}</strong> (ATS-friendly). Keep going.`);
+  }
+}
+
+function render(){
+  gridEl.innerHTML = "";
+  for(let y=0;y<H;y++){
+    for(let x=0;x<W;x++){
+      const c = grid[y][x];
+      const el = document.createElement("div");
+      el.className = "cell " + (c.type==="wall" ? "wall" : "path");
+      el.setAttribute("role","gridcell");
+
+      if(c.type==="path"){
+        el.textContent = c.word || "";
+        el.tabIndex = 0;
+
+        if(c.quality === "bad") el.classList.add("bad");
+        if(c.quality === "good") el.classList.add("good");
+        if(c.role === "start") el.classList.add("start");
+        if(c.role === "end") el.classList.add("end");
+
+        if(visited.has(key(x,y))) el.classList.add("visited");
+        if(cur.x===x && cur.y===y) el.classList.add("current");
+
+        // Tooltip only for bad cells
+        if(c.tip){
+          const tip = document.createElement("div");
+          tip.className = "tip";
+          tip.textContent = c.tip;
+          el.appendChild(tip);
+        }
+
+        // Click = move (for students who won’t use keys)
+        el.addEventListener("click", () => {
+          // allow click-to-teleport only if adjacent (keeps maze logic)
+          const manhattan = Math.abs(cur.x-x) + Math.abs(cur.y-y);
+          if(manhattan === 1) step(x-cur.x, y-cur.y);
+        });
+        el.addEventListener("focus", () => {
+          // keep current marker aligned with focus without moving (optional)
+        });
+      }
+
+      gridEl.appendChild(el);
+    }
+  }
+}
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// init
+build();
+</script>
+</body>
+</html>
