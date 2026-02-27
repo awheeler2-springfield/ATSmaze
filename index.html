@@ -3,48 +3,46 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze — Realistic Layout</title>
+<title>ATS Resume Maze — Dense Version</title>
 
 <style>
 body{
   margin:0;
-  background:#f4f4f4;
+  background:#f2f2f2;
   font-family: Georgia, "Times New Roman", serif;
 }
 
-.container{
-  max-width:900px;
+.resume{
+  max-width:920px;
   margin:40px auto;
   background:#fff;
-  padding:40px 60px;
-  box-shadow:0 2px 12px rgba(0,0,0,.08);
+  padding:50px 70px;
+  box-shadow:0 2px 14px rgba(0,0,0,.08);
   position:relative;
 }
 
-/* Header */
 .name{
   text-align:center;
-  font-weight:bold;
   font-size:28px;
-  letter-spacing:.5px;
+  font-weight:bold;
 }
 
 .contact{
   text-align:center;
-  margin-top:6px;
   font-size:14px;
+  margin-top:6px;
 }
 
 .section{
-  margin-top:28px;
+  margin-top:30px;
 }
 
 .section-title{
   font-weight:bold;
-  letter-spacing:.5px;
   border-bottom:1px solid #000;
   padding-bottom:4px;
   margin-bottom:10px;
+  letter-spacing:.5px;
 }
 
 .row{
@@ -52,226 +50,249 @@ body{
   justify-content:space-between;
 }
 
-.job-title{
-  font-weight:bold;
-}
-
-.dates{
-  text-align:right;
-  white-space:nowrap;
-}
-
 ul{
-  margin:6px 0 12px 20px;
+  margin-left:22px;
 }
 
-/* Maze nodes */
 .node{
-  cursor:default;
   position:relative;
+  display:inline-block;
 }
 
 .active{
   background:#ffe86a;
 }
 
-.blocked{
-  pointer-events:none;
-  opacity:.45;
+.trap{
+  font-style:italic;
 }
 
-/* Visible formatting errors */
-.script-font{
+.script{
   font-family:cursive;
 }
 
-.two-column{
+.twocol{
   column-count:2;
   column-gap:40px;
 }
 
-.keyword-spam{
-  font-style:italic;
+.table{
+  display:grid;
+  grid-template-columns:1fr 1fr;
 }
 
-.game-status{
+.meta{
   position:fixed;
   bottom:10px;
   left:10px;
   background:#fff;
-  padding:8px 12px;
+  padding:10px 14px;
   border:1px solid #ccc;
   font-size:13px;
+  max-width:360px;
 }
 </style>
 </head>
-
 <body>
 
-<div class="container" id="resume">
+<div class="resume" id="resume">
 
-  <div class="name">
-    <span class="node" data-id="start">FIRST</span>
-    <span class="node">LAST</span>
-  </div>
+<div class="name">
+<span class="node" data-x="0" data-y="0" data-start="true">FIRST</span>
+<span class="node" data-x="1" data-y="0">LAST</span>
+</div>
 
-  <div class="contact">
-    <span class="node">New York City, NY</span> •
-    <span class="node">email@email.com</span> •
-    <span class="node">(212) 123-4567</span> •
-    <span class="node">linkedin.com/in/username</span>
-  </div>
+<div class="contact">
+<span class="node" data-x="0" data-y="1">New York, NY</span> •
+<span class="node" data-x="1" data-y="1">email@email.com</span> •
+<span class="node" data-x="2" data-y="1">(212)123-4567</span> •
+<span class="node" data-x="3" data-y="1">linkedin.com/in/user</span>
+</div>
 
-  <div class="section" data-section="summary">
-    <div class="section-title">SUMMARY</div>
-    <p>
-      <span class="node">Data-driven</span>
-      <span class="node">SEO</span>
-      <span class="node">and</span>
-      <span class="node">analytics</span>
-      <span class="node">specialist</span>
-      <span class="node">with</span>
-      <span class="node">proven</span>
-      <span class="node">performance</span>.
-      <span class="node keyword-spam">SEO SEO SEO SEO</span>
-    </p>
-  </div>
+<div class="section" data-section="summary">
+<div class="section-title">SUMMARY</div>
+<p>
+<span class="node" data-x="0" data-y="2">Data-driven</span>
+<span class="node" data-x="1" data-y="2">marketing</span>
+<span class="node" data-x="2" data-y="2">analyst</span>
+<span class="node trap" data-x="3" data-y="2" data-trap="vague">passionate</span>
+<span class="node" data-x="4" data-y="2">specializing</span>
+<span class="node" data-x="5" data-y="2">in</span>
+<span class="node" data-x="6" data-y="2">SEO</span>
+<span class="node trap" data-x="7" data-y="2" data-trap="keyword">SEO</span>
+<span class="node trap" data-x="8" data-y="2" data-trap="keyword">SEO</span>
+<span class="node" data-x="9" data-y="2">analytics</span>
+</p>
+</div>
 
-  <div class="section" data-section="skills">
-    <div class="section-title">SKILLS</div>
-    <p class="two-column blocked">
-      Python GA4 SEO A11Y CMS Excel Reporting Dashboard Automation Optimization
-    </p>
-    <p>
-      <span class="node">Python</span>
-      <span class="node">GA4</span>
-      <span class="node">SEO</span>
-      <span class="node">Accessibility</span>
-      <span class="node">Reporting</span>
-    </p>
-  </div>
+<div class="section" data-section="skills">
+<div class="section-title">SKILLS</div>
+<p class="twocol trap script" data-trap="formatting">
+Python GA4 SEO Accessibility CMS Excel Tableau Reporting Automation Optimization
+</p>
+<p>
+<span class="node" data-x="0" data-y="3">Python</span>
+<span class="node" data-x="1" data-y="3">GA4</span>
+<span class="node" data-x="2" data-y="3">Accessibility</span>
+<span class="node" data-x="3" data-y="3">Excel</span>
+<span class="node" data-x="4" data-y="3">Reporting</span>
+</p>
+</div>
 
-  <div class="section" data-section="experience">
-    <div class="section-title">PROFESSIONAL EXPERIENCE</div>
+<div class="section" data-section="experience">
+<div class="section-title">PROFESSIONAL EXPERIENCE</div>
 
-    <div class="row">
-      <div class="job-title">
-        <span class="node">Marketing</span>
-        <span class="node">Analyst</span>
-      </div>
-      <div class="dates">
-        <span class="node">2021-Present</span>
-      </div>
-    </div>
+<div class="row">
+<div>
+<span class="node" data-x="0" data-y="4">Marketing</span>
+<span class="node" data-x="1" data-y="4">Analyst</span>
+</div>
+<div>
+<span class="node" data-x="6" data-y="4">2021-Present</span>
+</div>
+</div>
 
-    <ul>
-      <li>
-        <span class="node">Optimized</span>
-        <span class="node">25+</span>
-        <span class="node">pages</span>
-        <span class="node">increasing</span>
-        <span class="node">traffic</span>
-        <span class="node">18%</span>
-      </li>
-      <li>
-        <span class="node">Built</span>
-        <span class="node">dashboard</span>
-        <span class="node">reducing</span>
-        <span class="node">manual</span>
-        <span class="node">work</span>
-        <span class="node">2</span>
-        <span class="node">hours/week</span>
-      </li>
-      <li class="script-font blocked">
-        Implemented paperless booking system beautifully seamlessly elegantly
-      </li>
-      <li>
-        <span class="node">Improved</span>
-        <span class="node">CTR</span>
-        <span class="node">12%</span>
-      </li>
-    </ul>
-  </div>
+<ul>
+<li>
+<span class="node" data-x="0" data-y="5">Optimized</span>
+<span class="node" data-x="1" data-y="5">25+</span>
+<span class="node" data-x="2" data-y="5">pages</span>
+<span class="node" data-x="3" data-y="5">increasing</span>
+<span class="node" data-x="4" data-y="5">traffic</span>
+<span class="node" data-x="5" data-y="5">18%</span>
+</li>
+<li>
+<span class="node trap" data-x="0" data-y="6" data-trap="firstperson">I</span>
+<span class="node trap" data-x="1" data-y="6" data-trap="vague">worked</span>
+<span class="node trap" data-x="2" data-y="6" data-trap="vague">hard</span>
+<span class="node" data-x="3" data-y="6">reducing</span>
+<span class="node" data-x="4" data-y="6">manual</span>
+<span class="node" data-x="5" data-y="6">reporting</span>
+<span class="node" data-x="6" data-y="6">2hrs/week</span>
+</li>
+<li class="table trap" data-trap="table">
+Legacy Code Refactor | UI Cleanup
+</li>
+<li>
+<span class="node" data-x="0" data-y="7">Improved</span>
+<span class="node" data-x="1" data-y="7">CTR</span>
+<span class="node" data-x="2" data-y="7">12%</span>
+<span class="node" data-x="3" data-y="7">across</span>
+<span class="node" data-x="4" data-y="7">campaigns</span>
+</li>
+</ul>
+</div>
 
-  <div class="section" data-section="projects">
-    <div class="section-title">PROJECTS</div>
-    <ul>
-      <li>
-        <span class="node">Content</span>
-        <span class="node">Audit</span>
-        <span class="node">Strategy</span>
-      </li>
-    </ul>
-  </div>
+<div class="section" data-section="projects">
+<div class="section-title">PROJECTS</div>
+<ul>
+<li>
+<span class="node" data-x="0" data-y="8">Content</span>
+<span class="node" data-x="1" data-y="8">Audit</span>
+<span class="node" data-x="2" data-y="8">Strategy</span>
+<span class="node" data-x="3" data-y="8">Execution</span>
+</li>
+</ul>
+</div>
 
-  <div class="section" data-section="certifications">
-    <div class="section-title">CERTIFICATIONS</div>
-    <p>
-      <span class="node">GA4</span>
-      <span class="node">Certified</span>
-    </p>
-  </div>
+<div class="section" data-section="certifications">
+<div class="section-title">CERTIFICATIONS</div>
+<p>
+<span class="node" data-x="0" data-y="9">GA4</span>
+<span class="node" data-x="1" data-y="9">Certified</span>
+</p>
+</div>
 
-  <div class="section blocked" data-section="education" id="education">
-    <div class="section-title">EDUCATION</div>
-    <p>
-      <span class="node">B.A.</span>
-      <span class="node">Communications</span>
-      <span class="node">2020</span>
-    </p>
-  </div>
+<div class="section" data-section="education">
+<div class="section-title">EDUCATION</div>
+<p>
+<span class="node" data-x="0" data-y="10">B.A.</span>
+<span class="node" data-x="1" data-y="10">Communications</span>
+<span class="node" data-x="2" data-y="10">2020</span>
+</p>
+</div>
 
 </div>
 
-<div class="game-status" id="status">
-Moves: 0 | Target: SUMMARY
-</div>
+<div class="meta" id="meta">Moves: 0</div>
 
 <script>
 const nodes = Array.from(document.querySelectorAll(".node"));
-const status = document.getElementById("status");
-const educationSection = document.getElementById("education");
-
-let currentIndex = 0;
+let current = nodes.find(n=>n.dataset.start==="true");
 let moves = 0;
-let stage = 0;
-const order = ["summary","skills","experience","projects","certifications","education"];
+let trapsTriggered = [];
+let visitedSections = new Set();
+let order = ["summary","skills","experience","projects","certifications","education"];
 
-function update(){
+function highlight(){
   nodes.forEach(n=>n.classList.remove("active"));
-  nodes[currentIndex].classList.add("active");
-  status.innerHTML = `Moves: ${moves} | Target: ${order[stage].toUpperCase()}`;
+  current.classList.add("active");
 }
 
-function unlockNext(){
-  stage++;
-  if(order[stage] === "education"){
-    educationSection.classList.remove("blocked");
-  }
-}
+function move(dir){
+  const x = parseInt(current.dataset.x);
+  const y = parseInt(current.dataset.y);
 
-document.addEventListener("keydown", e=>{
-  const key = e.key;
-  let nextIndex = currentIndex;
+  let target = nodes.find(n=>{
+    const nx=parseInt(n.dataset.x);
+    const ny=parseInt(n.dataset.y);
+    if(dir==="right") return nx===x+1 && ny===y;
+    if(dir==="left") return nx===x-1 && ny===y;
+    if(dir==="down") return ny===y+1 && nx===x;
+    if(dir==="up") return ny===y-1 && nx===x;
+  });
 
-  if(key === "ArrowRight") nextIndex++;
-  if(key === "ArrowLeft") nextIndex--;
-  if(key === "ArrowDown") nextIndex += 4;
-  if(key === "ArrowUp") nextIndex -= 4;
-
-  if(nextIndex >=0 && nextIndex < nodes.length){
-    currentIndex = nextIndex;
+  if(target){
+    current = target;
     moves++;
-    update();
-
-    const section = nodes[currentIndex].closest(".section")?.dataset.section;
-    if(section === order[stage]){
-      unlockNext();
+    if(target.dataset.trap){
+      trapsTriggered.push(target.dataset.trap);
     }
+    const section = target.closest(".section")?.dataset.section;
+    if(section) visitedSections.add(section);
+    highlight();
+    document.getElementById("meta").innerHTML =
+      `Moves: ${moves}`;
+    checkCompletion();
   }
+}
+
+function checkCompletion(){
+  if(current.closest(".section")?.dataset.section === "education"){
+    let analysis = "<strong>Maze Complete</strong><br><br>";
+    analysis += `Total Moves: ${moves}<br>`;
+    analysis += `Sections Visited: ${Array.from(visitedSections).join(", ")}<br>`;
+    analysis += `Traps Entered: ${trapsTriggered.join(", ") || "None"}<br><br>`;
+    analysis += "Meta Analysis:<br>";
+
+    if(trapsTriggered.includes("keyword")){
+      analysis += "- Entered keyword stuffing cul-de-sac.<br>";
+    }
+    if(trapsTriggered.includes("vague")){
+      analysis += "- Entered vague language zone.<br>";
+    }
+    if(trapsTriggered.includes("firstperson")){
+      analysis += "- Used first-person phrasing (ATS risk).<br>";
+    }
+    if(trapsTriggered.includes("formatting")){
+      analysis += "- Navigated into non-ATS formatting region.<br>";
+    }
+    if(trapsTriggered.includes("table")){
+      analysis += "- Entered table-based layout block (ATS parsing issue).<br>";
+    }
+
+    document.getElementById("meta").innerHTML = analysis;
+  }
+}
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight") move("right");
+  if(e.key==="ArrowLeft") move("left");
+  if(e.key==="ArrowDown") move("down");
+  if(e.key==="ArrowUp") move("up");
 });
 
-update();
+highlight();
 </script>
 
 </body>
