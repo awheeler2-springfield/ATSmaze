@@ -1,149 +1,24 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze (Click)</title>
-
-<style>
-:root{
-  --bg:#f3f3f3;
-  --paper:#fff;
-  --ink:#111;
-  --ui:#ddd;
-  --yellow:#ffe86a;
-  --red:#ff8a8a;
-}
-
-body{
-  margin:0;
-  background:var(--bg);
-  font-family: Georgia, "Times New Roman", serif;
-  color:var(--ink);
-}
-
-/* Sidebar */
-.rail{
-  position:fixed;
-  left:0; top:0;
-  width:300px;
-  height:100vh;
-  background:#fff;
-  border-right:1px solid var(--ui);
-  padding:14px;
-  overflow:auto;
-}
-.rail h2{ margin:0 0 10px; font-size:16px; }
-
-.page{
-  margin-left:300px;
-  padding:30px 20px;
-}
-
-.resume{
-  max-width:960px;
-  margin:0 auto;
-  background:#fff;
-  padding:50px 70px;
-  box-shadow:0 2px 14px rgba(0,0,0,.08);
-}
-
-.section{ margin-top:28px; }
-.section-title{
-  font-weight:bold;
-  border-bottom:1px solid #000;
-  padding-bottom:4px;
-  margin-bottom:10px;
-}
-
-.node{
-  display:inline-block;
-  padding:2px 3px;
-  border-radius:2px;
-  cursor:pointer;
-}
-
-.active{ background:var(--yellow); }
-.visited{ background:var(--yellow); opacity:.9; }
-.bad{ background:var(--red); }
-
-.trap{ color:inherit; font-style:normal; }
-
-ul{ margin-left:22px; }
-</style>
-</head>
-<body>
-
-<div class="rail">
-  <h2>ATS Resume Maze</h2>
-  <p>
-    Click adjacent words to move.<br>
-    Move in order:<br>
-    SUMMARY → SKILLS → EXPERIENCE → PROJECTS → CERTIFICATIONS → EDUCATION
-  </p>
-  <p id="stats">Moves: 0 | ATS Hits: 0 | Score: 100</p>
-  <div id="report"></div>
-  <button onclick="reset()">New Round</button>
-</div>
-
-<div class="page">
-<div class="resume" id="resume">
-
-<div class="section">
-  <div class="section-title">HEADER</div>
-  <p id="header"></p>
-</div>
-
-<div class="section" data-sec="summary">
-  <div class="section-title">SUMMARY</div>
-  <p id="summary"></p>
-</div>
-
-<div class="section" data-sec="skills">
-  <div class="section-title">SKILLS</div>
-  <p id="skills"></p>
-</div>
-
-<div class="section" data-sec="experience">
-  <div class="section-title">PROFESSIONAL EXPERIENCE</div>
-  <div id="experience"></div>
-</div>
-
-<div class="section" data-sec="projects">
-  <div class="section-title">PROJECTS</div>
-  <ul id="projects"></ul>
-</div>
-
-<div class="section" data-sec="certifications">
-  <div class="section-title">CERTIFICATIONS</div>
-  <p id="certifications"></p>
-</div>
-
-<div class="section" data-sec="education">
-  <div class="section-title">EDUCATION</div>
-  <p id="education"></p>
-</div>
-
-</div>
-</div>
-
 <script>
-/* -----------------------------
-   GRID + ADJACENCY ENGINE
-------------------------------*/
+/* ==============================
+   STATE
+==============================*/
 
 let nodes = [];
 let edges = new Map();
 let current = null;
 let moves = 0;
-let hits = 0;
+let trapHits = 0;
 let stageOrder = ["summary","skills","experience","projects","certifications","education"];
 let stageIndex = 0;
 
-function addNode(el,x,y,section,trap=false){
+/* ==============================
+   NODE + EDGE ENGINE
+==============================*/
+
+function addNode(el,x,y,section,trap=false,type="format"){
   const id = nodes.length;
   el.dataset.id = id;
-  nodes.push({id,x,y,section,trap});
+  nodes.push({id,x,y,section,trap,type});
   el.addEventListener("click",()=>handleClick(id));
 }
 
@@ -156,7 +31,6 @@ function connect(a,b){
 
 function handleClick(id){
   if(current===null){
-    current=id;
     activate(id);
     return;
   }
@@ -165,21 +39,28 @@ function handleClick(id){
   }
 }
 
+/* ==============================
+   MOVE LOGIC
+==============================*/
+
 function moveTo(id){
   moves++;
   activate(id);
 
-  if(nodes[id].trap){
+  const node = nodes[id];
+
+  if(node.trap){
     document.querySelector(`[data-id="${id}"]`).classList.add("bad");
-    hits++;
+    trapHits++;
   }
 
-  if(nodes[id].section===stageOrder[stageIndex]){
+  if(node.section===stageOrder[stageIndex]){
     stageIndex++;
   }
 
   updateStats();
   checkComplete();
+  highlightNeighbors();
 }
 
 function activate(id){
@@ -189,56 +70,90 @@ function activate(id){
   current=id;
 }
 
+function highlightNeighbors(){
+  document.querySelectorAll(".neighbor").forEach(e=>e.classList.remove("neighbor"));
+  if(current===null) return;
+  edges.get(current)?.forEach(n=>{
+    document.querySelector(`[data-id="${n}"]`).classList.add("neighbor");
+  });
+}
+
+/* ==============================
+   SCORING
+==============================*/
+
 function updateStats(){
-  let score=Math.max(0,100 - hits*10 - Math.floor(moves/5));
-  document.getElementById("stats").textContent=
-    `Moves: ${moves} | ATS Hits: ${hits} | Score: ${score}`;
+  let structuralPenalty = Math.floor(moves/6);
+  let trapPenalty = trapHits * 12;
+  let score = Math.max(0, 100 - structuralPenalty - trapPenalty);
+
+  document.getElementById("stats").textContent =
+    `Moves: ${moves} | Trap Hits: ${trapHits} | Section: ${stageIndex}/${stageOrder.length} | Score: ${score}`;
 }
 
 function checkComplete(){
   if(nodes[current].section==="education"){
-    document.getElementById("report").innerHTML=
-      `<h3>Resume Analysis</h3>
-       <p>You completed the maze in ${moves} moves.</p>
-       <p>ATS hits: ${hits}.</p>
-       <p>Score reflects structural clarity and avoidance of formatting traps.</p>`;
+    document.getElementById("report").innerHTML =
+      `<h3>ATS Analysis</h3>
+       <p>Total Moves: ${moves}</p>
+       <p>Trap Hits: ${trapHits}</p>
+       <p>Interpretation:</p>
+       <ul>
+         <li>High moves = structural inefficiency</li>
+         <li>Trap hits = formatting interference</li>
+         <li>Section order compliance improves ATS clarity</li>
+       </ul>`;
   }
 }
 
-/* -----------------------------
-   BUILD CONTENT
-------------------------------*/
+/* ==============================
+   BUILD
+==============================*/
 
 function build(){
-  nodes=[]; edges.clear();
-  moves=0; hits=0; stageIndex=0; current=null;
+  nodes=[];
+  edges.clear();
+  moves=0;
+  trapHits=0;
+  stageIndex=0;
+  current=null;
   document.getElementById("report").innerHTML="";
 
+  buildHeader();
+  buildSummary();
+  buildSkills();
+  buildExperience();
+  buildEducation();
+
+  updateStats();
+}
+
+function buildHeader(){
   const header=document.getElementById("header");
   header.innerHTML="";
-  let h1=span("FIRST"); header.appendChild(h1); addNode(h1,0,0,"header");
-  let h2=span("LAST"); header.appendChild(h2); addNode(h2,1,0,"header");
+  let a=span("FIRST"); header.appendChild(a); addNode(a,0,0,"header");
+  let b=span("LAST"); header.appendChild(b); addNode(b,1,0,"header");
   connect(0,1);
+}
 
-  const summary=document.getElementById("summary");
-  summary.innerHTML="";
-  let s1=span("Data-driven"); summary.appendChild(s1); addNode(s1,0,1,"summary");
-  let s2=span("analytics"); summary.appendChild(s2); addNode(s2,1,1,"summary");
-  let s3=span("professional"); summary.appendChild(s3); addNode(s3,2,1,"summary");
-  connect(1,2); connect(2,3);
+function buildSummary(){
+  const el=document.getElementById("summary");
+  el.innerHTML="";
+  let a=span("Data-driven"); el.appendChild(a); addNode(a,0,1,"summary");
+  let b=span("analytics"); el.appendChild(b); addNode(b,1,1,"summary");
+  let c=span("professional"); el.appendChild(c); addNode(c,2,1,"summary");
+  connect(nodes.length-3,nodes.length-2);
+  connect(nodes.length-2,nodes.length-1);
+}
 
-  const skills=document.getElementById("skills");
-  skills.innerHTML="";
-  let sk1=span("GA4"); skills.appendChild(sk1); addNode(sk1,0,2,"skills");
-  let sk2=span("SEO"); skills.appendChild(sk2); addNode(sk2,1,2,"skills");
-  let sk3=span("Skill-Bars"); skills.appendChild(sk3); addNode(sk3,2,2,"skills",true);
-  connect(3,4); connect(4,5);
-
-  buildExperience();
-
-  const edu=document.getElementById("education");
-  edu.innerHTML="";
-  let e1=span("B.A."); edu.appendChild(e1); addNode(e1,0,20,"education");
+function buildSkills(){
+  const el=document.getElementById("skills");
+  el.innerHTML="";
+  let a=span("GA4"); el.appendChild(a); addNode(a,0,2,"skills");
+  let b=span("SEO"); el.appendChild(b); addNode(b,1,2,"skills");
+  let c=span("Skill-Bars"); el.appendChild(c); addNode(c,2,2,"skills",true,"format");
+  connect(nodes.length-3,nodes.length-2);
+  connect(nodes.length-2,nodes.length-1);
 }
 
 function buildExperience(){
@@ -246,20 +161,27 @@ function buildExperience(){
   exp.innerHTML="";
   let idStart=nodes.length;
 
-  let gridSize=8;
-  let grid=[];
+  let gridSize=6; // reduced for performance
   for(let y=0;y<gridSize;y++){
     for(let x=0;x<gridSize;x++){
-      let word=Math.random()<0.15?"TABLE":"optimized";
-      let trap=word==="TABLE";
+      let word = Math.random()<0.2 ? "TABLE" : "optimized";
+      let trap = word==="TABLE";
       let sp=span(word);
       exp.appendChild(sp);
-      addNode(sp,x,5+y,"experience",trap);
-      if(x>0) connect(idStart + y*gridSize + x -1, idStart + y*gridSize + x);
-      if(y>0) connect(idStart + (y-1)*gridSize + x, idStart + y*gridSize + x);
+      addNode(sp,x,y+4,"experience",trap,"format");
+
+      let id = idStart + y*gridSize + x;
+      if(x>0) connect(id-1,id);
+      if(y>0) connect(id-gridSize,id);
     }
     exp.appendChild(document.createElement("br"));
   }
+}
+
+function buildEducation(){
+  const edu=document.getElementById("education");
+  edu.innerHTML="";
+  let e1=span("B.A."); edu.appendChild(e1); addNode(e1,0,20,"education");
 }
 
 function span(text){
@@ -269,9 +191,7 @@ function span(text){
   return s;
 }
 
-function reset(){ build(); updateStats(); }
+function reset(){ build(); }
 
 build();
 </script>
-</body>
-</html>
