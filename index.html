@@ -3,51 +3,83 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ATS Resume Maze — Step 3 Stable</title>
+<title>ATS Resume Maze — Replayable Game Build</title>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  display: flex;
-  height: 100vh;
-}
+  body { font-family: Arial, sans-serif; margin: 0; display: flex; height: 100vh; }
 
-#rail {
-  width: 320px;
-  background: #1D3461;
-  color: white;
-  padding: 20px;
-  box-sizing: border-box;
-}
+  #rail {
+    width: 360px;
+    background: #1D3461;
+    color: white;
+    padding: 20px;
+    box-sizing: border-box;
+  }
 
-#maze {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(4, 200px);
-  gap: 18px;
-  justify-content: center;
-  align-content: center;
-  background: #f5f5f5;
-  padding: 30px;
-}
+  #rail h2 { margin-top: 0; }
 
-.node {
-  background: white;
-  border: 2px solid #ccc;
-  padding: 10px;
-  text-align: center;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.2s ease;
-}
+  .stat { margin: 8px 0; }
+  .btnRow { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 
-.visited { background: #FFFBF0; border-color: #C96A00; }
-.current { background: #F0FAFB; border-color: #0A6E6E; }
-.available { border-color: #0A6E6E; }
-.disabled { pointer-events: none; opacity: 0.4; }
+  button {
+    cursor: pointer;
+    border: none;
+    padding: 10px 12px;
+    font-weight: bold;
+    border-radius: 6px;
+  }
 
-#diagnostic { margin-top: 20px; font-size: 0.9rem; line-height: 1.4; }
+  #resetBtn { background: #FFFBF0; color: #1D3461; }
+  #resetBtn:hover { filter: brightness(0.95); }
+
+  #maze {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 200px);
+    gap: 18px;
+    justify-content: center;
+    align-content: center;
+    background: #f5f5f5;
+    padding: 30px;
+  }
+
+  .node {
+    background: white;
+    border: 2px solid #ccc;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s ease;
+    user-select: none;
+  }
+
+  .visited { background: #FFFBF0; border-color: #C96A00; }
+  .current { background: #F0FAFB; border-color: #0A6E6E; }
+  .available { border-color: #0A6E6E; }
+  .disabled { pointer-events: none; opacity: 0.4; }
+
+  #diagnostic {
+    margin-top: 16px;
+    font-size: 0.92rem;
+    line-height: 1.35;
+  }
+
+  #pathBox {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    line-height: 1.3;
+    opacity: 0.95;
+  }
+
+  #pathBox code {
+    display: block;
+    background: rgba(255,255,255,0.12);
+    padding: 8px;
+    border-radius: 6px;
+    margin-top: 6px;
+    word-break: break-word;
+  }
 </style>
 </head>
 
@@ -55,13 +87,24 @@ body {
 
 <div id="rail">
   <h2>ATS Resume Maze</h2>
-  <p><strong>Moves:</strong> <span id="moveCount">0</span></p>
-  <p><strong>Score:</strong> <span id="score">100</span></p>
+
+  <div class="stat"><strong>Moves:</strong> <span id="moveCount">0</span></div>
+  <div class="stat"><strong>Score:</strong> <span id="score">100</span></div>
+  <div class="stat"><strong>Best (this device):</strong> <span id="bestScore">—</span></div>
+
+  <div class="btnRow">
+    <button id="resetBtn" type="button">Reset Run</button>
+  </div>
+
+  <div id="pathBox">
+    <strong>Path (this run):</strong>
+    <code id="pathText">header</code>
+  </div>
+
   <div id="diagnostic"></div>
 </div>
 
 <div id="maze">
-
   <div class="node" id="header">Header</div>
   <div class="node" id="summary">Summary</div>
   <div class="node" id="skills">Skills</div>
@@ -78,23 +121,18 @@ body {
   <div class="node" id="projects">Projects</div>
   <div class="node" id="certifications">Certifications</div>
   <div class="node" id="education">Education</div>
-
 </div>
 
 <script type="module">
-
 /* =========================
    GRAPH (BIDIRECTIONAL)
 ========================= */
-
 const graph = {
-
   header: ["summary"],
   summary: ["header", "skills"],
   skills: ["summary", "experience_intro"],
 
   experience_intro: ["skills", "bullet_style"],
-
   bullet_style: ["experience_intro", "weak_verbs", "strong_verbs"],
 
   weak_verbs: ["bullet_style", "strong_verbs"],
@@ -109,29 +147,22 @@ const graph = {
   projects: ["tailored_alignment", "certifications"],
   certifications: ["projects", "education"],
   education: ["certifications"]
-
 };
 
-/* =========================
-   GRAPH VALIDATION
-========================= */
-
-function validateGraph(graph) {
-  for (const node in graph) {
-    graph[node].forEach(neighbor => {
-      if (!graph[neighbor] || !graph[neighbor].includes(node)) {
+function validateGraph(g) {
+  for (const node in g) {
+    g[node].forEach(neighbor => {
+      if (!g[neighbor] || !g[neighbor].includes(node)) {
         throw new Error(`Asymmetric edge: ${node} ↔ ${neighbor}`);
       }
     });
   }
 }
-
 validateGraph(graph);
 
 /* =========================
-   TRAP DEFINITIONS
+   TRAPS (END-ONLY EXPLANATION)
 ========================= */
-
 const trapExplanations = {
   weak_verbs: "Using weak or passive verbs reduces ATS keyword strength.",
   no_metrics: "Lack of quantifiable results lowers ranking score.",
@@ -141,107 +172,162 @@ const trapExplanations = {
 /* =========================
    STATE
 ========================= */
-
 function createInitialState() {
   return {
     currentNode: "header",
     visited: new Set(["header"]),
     moves: 0,
     trapsHit: new Set(),
-    complete: false
+    complete: false,
+    path: ["header"]
   };
 }
 
-const state = createInitialState();
+let state = createInitialState();
+
+/* =========================
+   BEST SCORE (localStorage)
+========================= */
+const BEST_KEY = "atsMazeBestScore";
+function getBestScore() {
+  const raw = localStorage.getItem(BEST_KEY);
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+function setBestScoreIfHigher(score) {
+  const best = getBestScore();
+  if (best === null || score > best) {
+    localStorage.setItem(BEST_KEY, String(score));
+  }
+}
+function updateBestScoreUI() {
+  const best = getBestScore();
+  document.getElementById("bestScore").textContent = best === null ? "—" : String(best);
+}
 
 /* =========================
    ENGINE
 ========================= */
+function attemptMove(s, targetNode) {
+  if (s.complete) return { success: false };
+  if (!graph[s.currentNode].includes(targetNode)) return { success: false };
 
-function attemptMove(state, targetNode) {
-  if (state.complete) return { success: false };
+  s.moves++;
+  s.currentNode = targetNode;
+  s.visited.add(targetNode);
+  s.path.push(targetNode);
 
-  if (!graph[state.currentNode].includes(targetNode)) {
-    return { success: false };
-  }
-
-  state.moves++;
-  state.currentNode = targetNode;
-  state.visited.add(targetNode);
-
-  if (trapExplanations[targetNode]) {
-    state.trapsHit.add(targetNode);
-  }
-
-  if (targetNode === "education") {
-    state.complete = true;
-  }
+  if (trapExplanations[targetNode]) s.trapsHit.add(targetNode);
+  if (targetNode === "education") s.complete = true;
 
   return { success: true };
 }
 
-function calculateScore(state) {
-  return Math.max(0, 100 - state.moves - (state.trapsHit.size * 10));
+function calculateScore(s) {
+  return Math.max(0, 100 - s.moves - (s.trapsHit.size * 10));
 }
 
 /* =========================
    RENDER
 ========================= */
-
-function render(state) {
+function render(s) {
   document.querySelectorAll(".node").forEach(el => {
     el.classList.remove("visited", "current", "available", "disabled");
     el.classList.add("disabled");
   });
 
-  state.visited.forEach(id => {
+  s.visited.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add("visited");
   });
 
-  const currentEl = document.getElementById(state.currentNode);
-  currentEl.classList.add("current");
+  const currentEl = document.getElementById(s.currentNode);
+  if (currentEl) currentEl.classList.add("current");
 
-  graph[state.currentNode].forEach(id => {
+  graph[s.currentNode].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.classList.remove("disabled");
       el.classList.add("available");
     }
   });
+
+  document.getElementById("pathText").textContent = s.path.join(" → ");
 }
 
 /* =========================
-   RAIL + DIAGNOSTIC
+   RAIL + END REPORT
 ========================= */
+function updateRail(s) {
+  const score = calculateScore(s);
+  document.getElementById("moveCount").textContent = String(s.moves);
+  document.getElementById("score").textContent = String(score);
 
-function updateRail(state) {
-  document.getElementById("moveCount").textContent = state.moves;
-  document.getElementById("score").textContent = calculateScore(state);
-
-  if (state.complete) {
-    showDiagnostic(state);
+  if (s.complete) {
+    setBestScoreIfHigher(score);
+    updateBestScoreUI();
+    showDiagnostic(s, score);
   }
 }
 
-function showDiagnostic(state) {
-  let message = "<h3>ATS Diagnostic Report</h3>";
+function labelNode(id) {
+  const labels = {
+    header: "Header",
+    summary: "Summary",
+    skills: "Skills",
+    experience_intro: "Experience Intro",
+    bullet_style: "Bullet Structure",
+    weak_verbs: "Weak Verbs",
+    strong_verbs: "Strong Verbs",
+    no_metrics: "No Metrics",
+    with_metrics: "Quantified Impact",
+    generic_alignment: "Generic Alignment",
+    tailored_alignment: "Tailored to Job",
+    projects: "Projects",
+    certifications: "Certifications",
+    education: "Education"
+  };
+  return labels[id] ?? id;
+}
 
-  if (state.trapsHit.size === 0) {
-    message += "<p>You optimized experience structure and alignment effectively.</p>";
+function showDiagnostic(s, score) {
+  let html = `<h3>Run Summary</h3>
+    <p><strong>Final score:</strong> ${score}</p>
+    <p><strong>Moves:</strong> ${s.moves}</p>`;
+
+  if (s.trapsHit.size === 0) {
+    html += `<p><strong>ATS flags:</strong> none</p>
+             <p>Clean Experience decisions: verbs + metrics + tailoring stayed strong.</p>`;
   } else {
-    state.trapsHit.forEach(trap => {
-      message += `<p><strong>${trap.replace("_"," ")}</strong>: ${trapExplanations[trap]}</p>`;
+    html += `<p><strong>ATS flags triggered:</strong> ${s.trapsHit.size}</p>`;
+    s.trapsHit.forEach(trap => {
+      html += `<p><strong>${labelNode(trap)}:</strong> ${trapExplanations[trap]}</p>`;
     });
   }
 
-  document.getElementById("diagnostic").innerHTML = message;
+  // Quick “replay hook”
+  html += `<p style="margin-top:12px; opacity:0.95;">
+            Replay goal: reach Education with fewer moves and zero flags.
+          </p>`;
+
+  document.getElementById("diagnostic").innerHTML = html;
 }
 
 /* =========================
-   INIT
+   RESET
 ========================= */
+function resetRun() {
+  state = createInitialState();
+  document.getElementById("diagnostic").innerHTML = "";
+  render(state);
+  updateRail(state);
+}
 
+/* =========================
+   INIT + EVENTS
+========================= */
+updateBestScoreUI();
 render(state);
 updateRail(state);
 
@@ -255,7 +341,8 @@ document.querySelectorAll(".node").forEach(node => {
   });
 });
 
-</script>
+document.getElementById("resetBtn").addEventListener("click", resetRun);
 
+</script>
 </body>
 </html>
