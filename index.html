@@ -54,6 +54,17 @@ body{
 }
 .rail button:hover{ filter:brightness(0.95); }
 
+#hint{
+  margin-top:10px;
+  font-family: Arial, sans-serif;
+  font-size:0.86rem;
+  line-height:1.25;
+  opacity:0.95;
+  padding:10px;
+  border-radius:8px;
+  background:rgba(255,255,255,0.10);
+}
+
 #pathBox{ margin-top:12px; font-family: Arial, sans-serif; font-size:0.86rem; }
 #pathBox code{
   display:block;
@@ -101,6 +112,18 @@ body{
 .node.current{ background:var(--tealbg); outline:2px solid var(--teal); outline-offset:2px; }
 .node.bad{ background:var(--red); }
 
+/* Make detours look like “drafting experiments” */
+.detour{
+  font-family: Arial, sans-serif;
+  font-size: 0.85rem;
+  background:#f2f2f2;
+  border:1px solid #e3e3e3;
+  padding:6px 8px;
+  border-radius:999px;
+  margin-right:8px;
+  margin-bottom:6px;
+}
+
 /* Experience zone styling */
 .exp-grid{
   margin-top:10px;
@@ -115,16 +138,7 @@ body{
   font-size:0.92rem;
   color:#333;
 }
-.exp-grid .row{
-  margin:6px 0;
-}
-.badge{
-  display:inline-block;
-  font-family: Arial, sans-serif;
-  font-size:0.75rem;
-  color:var(--muted);
-  margin-left:6px;
-}
+.exp-grid .row{ margin:6px 0; }
 .smallnote{
   margin-top:8px;
   font-family: Arial, sans-serif;
@@ -148,6 +162,8 @@ li{ margin:6px 0; }
   <div class="stat"><strong>Best (this device):</strong> <span id="bestScore">—</span></div>
 
   <button id="resetBtn" type="button">Reset Run</button>
+
+  <div id="hint" style="display:none;"></div>
 
   <div id="pathBox">
     <strong>Path (this run):</strong>
@@ -178,15 +194,13 @@ li{ margin:6px 0; }
     <div class="section">
       <div class="section-title">PROFESSIONAL EXPERIENCE</div>
 
-      <!-- Backbone bullets (fixed) -->
       <ul id="expBackbone"></ul>
 
-      <!-- Random detours (changes per run) -->
       <div class="exp-grid">
         <h4>Experience Drafting Detours (changes every run)</h4>
         <div id="expDetours"></div>
         <div class="smallnote">
-          These detours are not “fail states.” They add moves and may trigger ATS flags that appear only at the end.
+          Detours add moves and may trigger ATS flags that appear only at the end.
         </div>
       </div>
     </div>
@@ -210,13 +224,6 @@ li{ margin:6px 0; }
 </div>
 
 <script type="module">
-/* =========================================================
-   Resume Skin + Hybrid Engine (Option 1 + C)
-   - Coarse nodes for sections
-   - Dense Experience: fixed backbone + randomized detours
-   - End-only report
-========================================================= */
-
 /* ---------- Persistence ---------- */
 const BEST_KEY = "atsMazeBestScore";
 function getBestScore() {
@@ -234,7 +241,7 @@ function updateBestScoreUI() {
   document.getElementById("bestScore").textContent = best === null ? "—" : String(best);
 }
 
-/* ---------- Traps (end-only) ---------- */
+/* ---------- Traps (end-only explanation, mid-run flash only) ---------- */
 const trapExplanations = {
   weak_verbs: "Weak or passive verbs reduce ATS keyword strength and clarity.",
   no_metrics: "No quantified impact reduces ranking and credibility signals.",
@@ -243,7 +250,6 @@ const trapExplanations = {
   graphics_icons: "Icons/graphics can hide text from ATS or introduce noise.",
   keyword_dump: "Keyword dumping can look spammy and reduce semantic match quality."
 };
-
 const trapLabels = {
   weak_verbs: "Weak verbs",
   no_metrics: "No metrics",
@@ -262,14 +268,12 @@ function addNode(id, label, tag="") {
   nodes[id] = { id, label, tag, el: null };
   if (!graph[id]) graph[id] = [];
 }
-
 function connect(a,b) {
   if (!graph[a]) graph[a]=[];
   if (!graph[b]) graph[b]=[];
   if (!graph[a].includes(b)) graph[a].push(b);
   if (!graph[b].includes(a)) graph[b].push(a);
 }
-
 function validateGraph(g) {
   for (const node in g) {
     g[node].forEach(neighbor => {
@@ -293,7 +297,7 @@ function buildHybridGraph() {
   graph = {};
   experienceSideIds = [];
 
-  // Coarse “section nodes”
+  // Coarse section nodes
   addNode("header", "Header", "section");
   addNode("summary", "Summary", "section");
   addNode("skills", "Skills", "section");
@@ -310,7 +314,7 @@ function buildHybridGraph() {
   connect("skills","exp_entry");
   connect("exp_exit","projects");
 
-  // Fixed backbone (bullets)
+  // Fixed backbone
   const backbone = [
     { id:"exp_b1", label:"Role + Company context", tag:"backbone" },
     { id:"exp_b2", label:"Strong action verbs", tag:"backbone" },
@@ -389,15 +393,32 @@ function createInitialState() {
     path: ["header"]
   };
 }
-
 let state = createInitialState();
+
+/* ---------- Trap flash (B) ---------- */
+function flashTrap(nodeId) {
+  const el = nodes[nodeId]?.el;
+  if (!el) return;
+
+  // briefly show red, then revert to normal (visited/current handled by render)
+  el.classList.add("bad");
+  window.setTimeout(() => {
+    el.classList.remove("bad");
+    // Re-apply render so classes match state after flash
+    render(state);
+  }, 350);
+}
 
 /* ---------- Engine ---------- */
 function recordTrapHit(s, nodeId) {
   const tag = nodes[nodeId]?.tag ?? "";
   if (!tag.startsWith("trap:")) return;
+
   const type = tag.split(":")[1];
   s.trapsHit.set(type, (s.trapsHit.get(type) ?? 0) + 1);
+
+  // Visual feedback: flash red only (no narrative)
+  flashTrap(nodeId);
 }
 
 function attemptMove(s, targetNode) {
@@ -421,9 +442,10 @@ function calculateScore(s) {
 }
 
 /* ---------- DOM helpers ---------- */
-function makeNodeSpan(id, textOverride=null) {
+function makeNodeSpan(id, textOverride=null, extraClass="") {
   const sp = document.createElement("span");
   sp.className = "node";
+  if (extraClass) sp.classList.add(extraClass);
   sp.textContent = (textOverride ?? nodes[id].label);
   sp.dataset.nodeId = id;
 
@@ -454,36 +476,28 @@ function clearResumeAreas() {
 function buildResumeDOM() {
   clearResumeAreas();
 
-  // HEADER: make it look like a name line + contact, but only the “Header node” is clickable
   const headerLine = document.getElementById("headerLine");
   headerLine.appendChild(makeNodeSpan("header", "FIRST LAST"));
-  headerLine.appendChild(document.createTextNode("  •  Springfield, MA  •  email@example.com  •  (555) 555-5555"));
+  headerLine.appendChild(document.createTextNode(" • Springfield, MA • email@example.com • (555) 555-5555"));
 
-  // SUMMARY: clickable “Summary node”
   const summaryLine = document.getElementById("summaryLine");
   summaryLine.appendChild(makeNodeSpan("summary", "Data-driven analytics professional"));
   summaryLine.appendChild(document.createTextNode(" with experience translating stakeholder needs into measurable outcomes and ATS-friendly content structure."));
 
-  // SKILLS: clickable “Skills node”
   const skillsLine = document.getElementById("skillsLine");
   skillsLine.appendChild(makeNodeSpan("skills", "GA4 • SEO • Content Strategy • Reporting"));
-  skillsLine.appendChild(document.createTextNode("  (Skills are read by ATS best when presented as plain text, not graphics.)"));
+  skillsLine.appendChild(document.createTextNode(" (Skills are read by ATS best when presented as plain text, not graphics.)"));
 
-  // EXPERIENCE: entry node is implicit via Skills → Experience Entry; we render Experience Entry/Exit as small inline controls
-  // Backbone bullets (fine-grain)
   const expList = document.getElementById("expBackbone");
 
-  // Add a small “Experience Entry” chip at the top (clickable)
   const entryLi = document.createElement("li");
   entryLi.appendChild(makeNodeSpan("exp_entry", "Enter Experience section"));
-  entryLi.appendChild(document.createElement("span")).className = "badge";
   expList.appendChild(entryLi);
 
   const backboneIds = ["exp_b1","exp_b2","exp_b3","exp_b4","exp_b5"];
   for (const id of backboneIds) {
     const li = document.createElement("li");
     li.appendChild(makeNodeSpan(id));
-    li.appendChild(document.createElement("span")).className = "badge";
     expList.appendChild(li);
   }
 
@@ -491,23 +505,16 @@ function buildResumeDOM() {
   exitLi.appendChild(makeNodeSpan("exp_exit", "Exit Experience section"));
   expList.appendChild(exitLi);
 
-  // Detours (random) shown as “drafting detours”
   const detours = document.getElementById("expDetours");
   if (experienceSideIds.length === 0) {
     detours.textContent = "No detours generated this run. Reset to get a different Experience landscape.";
   } else {
-    // render in rows of 2–3 for a “resume-like” box
     let row = document.createElement("div");
     row.className = "row";
     let countInRow = 0;
 
     for (const sid of experienceSideIds) {
-      const chip = makeNodeSpan(sid);
-      chip.style.marginRight = "10px";
-      chip.style.marginBottom = "6px";
-      chip.style.fontFamily = "Arial, sans-serif";
-      chip.style.fontSize = "0.85rem";
-
+      const chip = makeNodeSpan(sid, null, "detour");
       row.appendChild(chip);
       countInRow++;
       if (countInRow >= 2) {
@@ -520,14 +527,13 @@ function buildResumeDOM() {
     if (row.childNodes.length) detours.appendChild(row);
   }
 
-  // PROJECTS / CERTIFICATIONS / EDUCATION (coarse nodes)
   const projectsLine = document.getElementById("projectsLine");
   projectsLine.appendChild(makeNodeSpan("projects", "ATS Resume Maze (interactive prototype)"));
-  projectsLine.appendChild(document.createTextNode(" — clickthrough adjacency game teaching ATS optimization."))
+  projectsLine.appendChild(document.createTextNode(" — clickthrough adjacency game teaching ATS optimization."));
 
   const certsLine = document.getElementById("certsLine");
   certsLine.appendChild(makeNodeSpan("certifications", "Google Analytics Certification"));
-  certsLine.appendChild(document.createTextNode("  •  SEO Foundations"));
+  certsLine.appendChild(document.createTextNode(" • SEO Foundations"));
 
   const eduLine = document.getElementById("educationLine");
   eduLine.appendChild(makeNodeSpan("education", "B.A., Communication"));
@@ -535,13 +541,12 @@ function buildResumeDOM() {
 }
 
 /* ---------- Rendering (enable neighbors only) ---------- */
-function applyNodeClasses(el, {visited=false, current=false, available=false, disabled=false, bad=false}) {
-  el.classList.remove("visited","current","available","disabled","bad");
+function applyNodeClasses(el, {visited=false, current=false, available=false, disabled=false}) {
+  el.classList.remove("visited","current","available","disabled");
   if (visited) el.classList.add("visited");
   if (current) el.classList.add("current");
   if (available) el.classList.add("available");
   if (disabled) el.classList.add("disabled");
-  if (bad) el.classList.add("bad");
 }
 
 function render(s) {
@@ -567,6 +572,17 @@ function render(s) {
     const el = nodes[id]?.el;
     if (el) applyNodeClasses(el, { available:true });
   });
+
+  // Hint if on a detour node
+  const hintEl = document.getElementById("hint");
+  const curTag = nodes[s.currentNode]?.tag ?? "";
+  if (curTag.startsWith("trap:")) {
+    hintEl.style.display = "block";
+    hintEl.innerHTML = `Detour selected. To continue, click a highlighted backbone item to re-enter the main path.`;
+  } else {
+    hintEl.style.display = "none";
+    hintEl.innerHTML = "";
+  }
 
   // Path display
   document.getElementById("pathText").textContent = s.path.join(" → ");
