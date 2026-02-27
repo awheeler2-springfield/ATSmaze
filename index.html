@@ -281,8 +281,7 @@ el.classList.add("bad");
 setTimeout(()=>{el.classList.remove("bad");},350);
 }
 
-function move(id){
-if(!graph[state.current].includes(id))return;
+console.log("Current:", state.current, "Neighbors:", graph[state.current]);
 
 state.moves++;
 state.current=id;
