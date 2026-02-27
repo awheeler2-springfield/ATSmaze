@@ -3,345 +3,793 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze</title>
-
+<title>ATS Resume Maze (Grid)</title>
 <style>
-:root{
-  --bg:#fff;
-  --ink:#111;
-  --muted:#444;
-  --rule:#d6d6d6;
-  --yellow:#ffe86a;
-  --yellow-border:#d1c25d;
-  --shadow:0 2px 10px rgba(0,0,0,.08);
-  --radius:14px;
-  --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-}
+  :root{
+    --bg:#fff;
+    --ink:#111;
+    --muted:#444;
+    --rule:#d6d6d6;
+    --grid:#efefef;           /* faint grid */
+    --wall:#111;              /* wall outline */
+    --yellow:#ffe86a;
+    --yellow-border:#d1c25d;
+    --shadow:0 2px 10px rgba(0,0,0,.08);
+    --radius:14px;
+    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  }
 
-html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font)}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);}
 
-.wrap{
-  max-width:1200px;
-  margin:0 auto;
-  padding:16px;
-  display:grid;
-  grid-template-columns:360px 1fr;
-  gap:14px;
-}
-@media(max-width:980px){.wrap{grid-template-columns:1fr}}
+  .wrap{
+    max-width: 1240px;
+    margin:0 auto;
+    padding:16px;
+    display:grid;
+    grid-template-columns: 360px 1fr;
+    gap:14px;
+  }
+  @media(max-width: 980px){ .wrap{grid-template-columns:1fr;} }
 
-.panel,.paper{
-  border:1px solid var(--rule);
-  border-radius:var(--radius);
-  background:#fff;
-  box-shadow:var(--shadow);
-  overflow:hidden;
-}
+  .panel,.paper{
+    border:1px solid var(--rule);
+    border-radius: var(--radius);
+    background:#fff;
+    box-shadow: var(--shadow);
+    overflow:hidden;
+  }
 
-.panel header,.paper header{
-  padding:12px 14px;
-  border-bottom:1px solid var(--rule);
-  background:#fff;
-}
+  .panel header,.paper header{
+    padding:12px 14px;
+    border-bottom:1px solid var(--rule);
+    background:#fff;
+  }
 
-h1{margin:0 0 6px;font-size:16px}
-.sub{font-size:13px;color:var(--muted)}
+  h1{margin:0 0 6px;font-size:16px;letter-spacing:.2px}
+  .sub{margin:0;color:var(--muted);font-size:13px;line-height:1.35}
 
-.panel .content{padding:14px}
+  .panel .content{ padding:14px; }
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
 
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  button{
+    border:1px solid var(--rule);
+    background:#fff;
+    color:var(--ink);
+    border-radius:12px;
+    padding:10px 12px;
+    font-size:14px;
+    cursor:pointer;
+    box-shadow: 0 1px 0 rgba(0,0,0,.04);
+  }
+  .pill{
+    border:1px solid var(--rule);
+    border-radius:999px;
+    padding:8px 10px;
+    background:#fff;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .status{
+    border:1px solid var(--rule);
+    border-radius:12px;
+    padding:10px 12px;
+    background:#fff;
+    font-size:13px;
+    color:var(--muted);
+    line-height:1.35;
+  }
+  .status strong{color:var(--ink);}
+  .kbd{
+    display:inline-block;
+    border:1px solid var(--rule);
+    background:#fff;
+    border-radius:6px;
+    padding:1px 6px;
+    margin:0 2px;
+    font-size:12px;
+    color:var(--muted);
+  }
 
-button{
-  border:1px solid var(--rule);
-  background:#fff;
-  border-radius:12px;
-  padding:8px 12px;
-  cursor:pointer;
-}
+  .paper header{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:flex-start;
+  }
+  .paperTitle{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    min-width:260px;
+  }
+  .paperTitle .title{font-size:16px;font-weight:900;letter-spacing:.2px}
+  .paperTitle .meta{font-size:12px;color:var(--muted)}
 
-.pill{
-  border:1px solid var(--rule);
-  border-radius:999px;
-  padding:6px 10px;
-  font-size:13px;
-  color:var(--muted);
-}
+  /* Maze grid “resume” */
+  .mazeWrap{
+    padding: 14px;
+    overflow:auto;
+    background:#fff;
+  }
+  .grid{
+    display:grid;
+    gap:0; /* we use borders for gridlines */
+    user-select:none;
+  }
+  .cell{
+    width: 44px;
+    height: 34px;
+    border:1px solid var(--grid); /* faint gridlines */
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    line-height:1;
+    color:var(--ink);
+    position:relative;
+    overflow:hidden;
+    white-space:nowrap;
+  }
 
-.status{
-  border:1px solid var(--rule);
-  border-radius:12px;
-  padding:10px;
-  font-size:13px;
-  color:var(--muted);
-}
+  /* Walkable cells look like “words/chunks” on the page */
+  .cell.open{
+    background:#fff;
+  }
 
-.resume{
-  padding:20px;
-  max-width:880px;
-  margin:0 auto;
-}
+  /* Walls */
+  .cell.wall{
+    background:#fff;
+    border-color:#111;         /* make walls overt */
+  }
 
-.name{font-size:22px;font-weight:900;margin:0}
-.tagline{font-size:12px;color:var(--muted);margin-top:4px}
-.section{margin-top:14px}
-.sectionTitle{
-  font-size:12px;
-  font-weight:900;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  margin-bottom:6px;
-}
-ul{margin:6px 0 0 18px}
-li{margin:4px 0;font-size:13px}
+  /* Big “bad formatting” blocks (still walls) */
+  .cell.trap{
+    background:#fff;
+    border-color:#111;
+    font-weight:800;
+  }
 
-.hot{
-  border-radius:8px;
-  padding:2px 4px;
-}
+  /* Cursor + path */
+  .cell.current{
+    background: var(--yellow);
+    border-color: var(--yellow-border);
+    z-index:2;
+  }
+  .cell.visited{
+    background: var(--yellow);
+    border-color: var(--yellow-border);
+    opacity: .92;
+  }
 
-.hot.current,.hot.visited{
-  background:var(--yellow);
-  border:1px solid var(--yellow-border);
-}
+  /* Start/End badges */
+  .badge{
+    position:absolute;
+    top:2px; right:2px;
+    font-size:9px;
+    border:1px solid var(--rule);
+    border-radius:999px;
+    padding:1px 6px;
+    color:var(--muted);
+    background:#fff;
+  }
 
-.badVisual{
-  font-family:cursive;
-}
-.twoColumn{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-}
-.badBox{
-  border:2px dashed #999;
-  padding:4px;
-}
-.badTable table{
-  border-collapse:collapse;
-}
-.badTable td{
-  border:1px solid #aaa;
-  padding:3px;
-}
+  /* Make the grid feel more like a “page” */
+  .pageFrame{
+    border:1px solid var(--rule);
+    border-radius:14px;
+    padding:10px;
+    background:#fff;
+    box-shadow: var(--shadow);
+  }
 </style>
 </head>
 
 <body>
-
 <div class="wrap">
 
-<section class="panel">
-<header>
-<h1>ATS Resume Maze</h1>
-<p class="sub">
-Arrow keys move through resume elements. Yellow shows your path.
-Reach <strong>Education</strong> without stepping on formatting or content errors.
-</p>
-</header>
+  <section class="panel">
+    <header>
+      <h1>ATS Resume Maze</h1>
+      <p class="sub">
+        Arrow keys move <strong>cell-by-cell</strong> through word-chunks. Yellow marks your route.
+        Reach <strong>Education</strong> in the bottom-right. ATS traps are physical obstacles you must route around.
+      </p>
+    </header>
 
-<div class="content">
-<div class="row">
-<button id="newBtn">New Round</button>
-<button id="resetBtn">Restart</button>
-<span class="pill" id="roundPill">Round: 1</span>
-<span class="pill" id="movesPill">Moves: 0</span>
-</div>
+    <div class="content">
+      <div class="row">
+        <button id="newBtn" type="button">New Round</button>
+        <button id="restartBtn" type="button">Restart</button>
+        <span class="pill" id="roundPill">Round: 1</span>
+        <span class="pill" id="movesPill">Moves: 0</span>
+      </div>
 
-<div class="status" id="status">
-Start at Address. Navigate around ATS traps. Finish at Education.
-</div>
-</div>
-</section>
+      <div class="status" id="status" role="status" aria-live="polite">
+        <strong>Goal:</strong> Start at Address (top-left) → finish at Education (bottom-right).
+        <br/>
+        <strong>Controls:</strong> <span class="kbd">↑</span><span class="kbd">↓</span><span class="kbd">←</span><span class="kbd">→</span>
+      </div>
 
-<section class="paper">
-<header>
-<div>
-<strong>Mock Resume</strong>
-</div>
-</header>
+      <div class="status" style="margin-top:10px;">
+        <strong>Always-present sections:</strong> Summary • Skills • Experience • Projects • Certifications • Education
+        <br/>
+        <strong>Overt errors:</strong> script font, two-columns, text box, tables, icons-only, keyword stuffing, vague claims.
+      </div>
+    </div>
+  </section>
 
-<div class="resume" id="stage"></div>
+  <section class="paper">
+    <header>
+      <div class="paperTitle">
+        <div class="title">Mock Resume (Faint Grid Maze)</div>
+        <div class="meta" id="meta">Each round generates a new maze and a new resume text pack.</div>
+      </div>
+      <div class="row" style="margin:0">
+        <span class="pill" id="variantPill">Pack: A</span>
+        <span class="pill" id="progressPill">Start: Address</span>
+      </div>
+    </header>
 
-</section>
+    <div class="mazeWrap">
+      <div class="pageFrame">
+        <div id="grid" class="grid" aria-label="Resume maze grid"></div>
+      </div>
+    </div>
+  </section>
+
 </div>
 
 <script>
-let round=1,moves=0,current=null,visited=new Set();
-let graph=new Map(),blocked=new Set(),hotEls=new Map();
+/* =========================
+   ATS Resume Maze (true grid)
+   ========================= */
 
-const stage=document.getElementById("stage");
-const statusEl=document.getElementById("status");
-const roundPill=document.getElementById("roundPill");
-const movesPill=document.getElementById("movesPill");
+const gridEl = document.getElementById("grid");
+const statusEl = document.getElementById("status");
+const roundPill = document.getElementById("roundPill");
+const movesPill = document.getElementById("movesPill");
+const variantPill = document.getElementById("variantPill");
+const progressPill = document.getElementById("progressPill");
+const metaEl = document.getElementById("meta");
 
-document.getElementById("newBtn").onclick=()=>{round++;load()};
-document.getElementById("resetBtn").onclick=()=>{restart()};
+document.getElementById("newBtn").addEventListener("click", () => newRound());
+document.getElementById("restartBtn").addEventListener("click", () => restart());
 
+let round = 1;
+let moves = 0;
+
+// Maze dimensions (odd sizes make perfect mazes easier)
+const COLS = 31;
+const ROWS = 23;
+
+let cells = [];         // grid of objects
+let player = {x:0,y:0};
+let start = {x:0,y:0};
+let end = {x:COLS-1, y:ROWS-1};
+let visited = new Set();
+
+// Audio (simple beeps; no external files)
+let audioCtx = null;
+function beep(freq=520, ms=35, gain=0.05){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = "sine";
+    o.frequency.value = freq;
+    g.gain.value = gain;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    setTimeout(()=>o.stop(), ms);
+  }catch(e){ /* ignore */ }
+}
+
+function key(x,y){ return `${x},${y}`; }
+function inBounds(x,y){ return x>=0 && x<COLS && y>=0 && y<ROWS; }
+function cellAt(x,y){ return cells[y][x]; }
+
+function setStatus(html){ statusEl.innerHTML = html; }
 function updateHUD(){
-roundPill.textContent="Round: "+round;
-movesPill.textContent="Moves: "+moves;
+  roundPill.textContent = `Round: ${round}`;
+  movesPill.textContent = `Moves: ${moves}`;
 }
 
-function load(){
-moves=0;
-visited.clear();
-updateHUD();
+// --- Resume text packs (different “rounds”) ---
+const PACKS = [
+  makePackA(),
+  makePackB(),
+  makePackC()
+];
 
-const v=variant();
-stage.innerHTML=v.html;
-
-hotEls.clear();
-document.querySelectorAll(".hot").forEach(el=>{
-hotEls.set(el.dataset.id,el);
-});
-
-graph=new Map(Object.entries(v.edges));
-blocked=new Set(v.pitfalls);
-
-setCurrent(v.start);
-statusEl.textContent="Navigate to Education without stepping on errors.";
+function makePackA(){
+  return {
+    key:"A",
+    requiredSections: ["SUMMARY","SKILLS","EXPERIENCE","PROJECTS","CERTS","EDUCATION"],
+    corridorTokens: chunkTokens([
+      "ADDRESS","123 MAIN ST","SPRINGFIELD MA","EMAIL","PHONE",
+      "SUMMARY","RESULTS DRIVEN","SEO","ANALYTICS","STAKEHOLDER",
+      "SKILLS","GA4","WORDPRESS","ACCESSIBILITY","CONTENT STRAT",
+      "EXPERIENCE","CONTENT SPEC","08/2023-01/2026","OPTIMIZED 25+","TRAFFIC +18%",
+      "PROJECTS","SITE AUDIT","EDITORIAL PLAN","MEASUREMENT",
+      "CERTS","GA4 CERT","HUBSPOT CM",
+      "EDUCATION","BA COMM","05/2023"
+    ]),
+    decoyTokens: chunkTokens([
+      "PASSIONATE","TEAM PLAYER","HARDWORK","DETAILS","GOOD VIBES",
+      "SEO SEO SEO","CREATIVE","SELF START","FAST LEARN","AMAZING",
+      "INFOGRAPH","ICONS","TEXT BOX","TABLE","TWO COLUMN","SCRIPT FONT",
+      "OBJECTIVE","MY JOURNEY","SKILL BARS","UNLABELED","RECENTLY"
+    ])
+  };
 }
 
-function variant(){
-return {
-start:"addr",
-end:"edu",
-pitfalls:[
-"trap_font","trap_twocol","trap_box","trap_table",
-"trap_vague","trap_keywords","trap_icons","trap_heading"
-],
-html:`
-
-<p class="name">Jordan Avery</p>
-<p class="tagline">Digital Communications • Content Strategy</p>
-
-<div>
-<span class="hot" data-id="addr">123 Main St • Springfield, MA • jordan@email.com</span>
-<span class="hot" data-id="trap_icons">[icons-only contact]</span>
-</div>
-
-<hr>
-
-<div class="section">
-<div class="sectionTitle"><span class="hot" data-id="summary">Summary</span>
-<span class="hot badVisual" data-id="trap_font">Summary in script font</span>
-</div>
-<p>
-<span class="hot" data-id="sum_good">Results-driven communications specialist with experience in SEO, analytics, and stakeholder management.</span>
-<span class="hot" data-id="trap_vague">Hard-working team player with great attitude.</span>
-</p>
-</div>
-
-<div class="section">
-<div class="sectionTitle"><span class="hot" data-id="skills">Skills</span></div>
-<div class="twoColumn hot" data-id="trap_twocol">
-Two column layout
-</div>
-<p>
-<span class="hot" data-id="skills_good">SEO • GA4 • Accessibility • Content strategy</span>
-<span class="hot" data-id="trap_keywords">SEO SEO SEO SEO SEO</span>
-</p>
-</div>
-
-<div class="section">
-<div class="sectionTitle"><span class="hot" data-id="experience">Experience</span>
-<span class="hot" data-id="trap_heading">My Journey</span>
-</div>
-<ul>
-<li><span class="hot" data-id="exp_good">Optimized 25+ pages; increased traffic 18%.</span></li>
-<li><span class="hot badBox" data-id="trap_box">Bullet inside text box</span></li>
-<li><span class="hot" data-id="projects">Led website redesign project.</span></li>
-</ul>
-</div>
-
-<div class="section badTable">
-<div class="sectionTitle"><span class="hot" data-id="trap_table">Table-based layout</span></div>
-<table><tr><td>Data</td><td>Stuff</td></tr></table>
-</div>
-
-<div class="section">
-<div class="sectionTitle"><span class="hot" data-id="certs">Certifications</span></div>
-<p><span class="hot" data-id="cert_good">Google Analytics Certification</span></p>
-</div>
-
-<div class="section">
-<div class="sectionTitle"><span class="hot" data-id="education_head">Education</span></div>
-<p><span class="hot" data-id="edu">B.A. Communication — Example University</span></p>
-</div>
-`,
-edges:{
-addr:{down:"summary",right:"trap_icons"},
-summary:{up:"addr",down:"sum_good",right:"trap_font"},
-sum_good:{up:"summary",down:"skills"},
-skills:{up:"sum_good",down:"skills_good",right:"trap_twocol"},
-skills_good:{up:"skills",down:"experience",right:"trap_keywords"},
-experience:{up:"skills_good",down:"exp_good",right:"trap_heading"},
-exp_good:{up:"experience",down:"projects",right:"trap_box"},
-projects:{up:"exp_good",down:"certs"},
-certs:{up:"projects",down:"cert_good"},
-cert_good:{up:"certs",down:"education_head"},
-education_head:{up:"cert_good",down:"edu"},
-edu:{up:"education_head"},
-trap_icons:{left:"addr"},
-trap_font:{left:"summary"},
-trap_twocol:{left:"skills"},
-trap_keywords:{left:"skills_good"},
-trap_heading:{left:"experience"},
-trap_box:{left:"exp_good"},
-trap_table:{},
-trap_vague:{},
-},
-};
+function makePackB(){
+  return {
+    key:"B",
+    requiredSections: ["SUMMARY","SKILLS","EXPERIENCE","PROJECTS","CERTS","EDUCATION"],
+    corridorTokens: chunkTokens([
+      "ADDRESS","CITY STATE","EMAIL","PHONE","LINKEDIN",
+      "SUMMARY","CONTENT","COMM STRAT","GA4","SEO",
+      "SKILLS","COPYWRITE","CMS","A11Y","PROJECT MGMT",
+      "EXPERIENCE","SOCIAL ASST","09/2024-01/2026","ENGAGE +12%","CTR +0.9",
+      "PROJECTS","NEWSLTR","STYLE GUIDE","TEMPLATE",
+      "CERTS","GA4","META CERT",
+      "EDUCATION","BA","05/2023"
+    ]),
+    decoyTokens: chunkTokens([
+      "GREAT","FUN","ENERGY","TRY HARD","NICE",
+      "KEYWORD","KEYWORD","KEYWORD","SPAM",
+      "ICONS","TABLE","TEXT BOX","TWO COLUMN","SCRIPT",
+      "VAGUE","RECENTLY","SOMEWHERE","WAS GOOD"
+    ])
+  };
 }
 
-function setCurrent(id){
-if(current&&hotEls.get(current))hotEls.get(current).classList.remove("current");
-current=id;
-visited.add(id);
-for(const id2 of visited){
-hotEls.get(id2)?.classList.add("visited");
-}
-hotEls.get(id)?.classList.add("current");
-
-if(id==="edu"){
-statusEl.textContent="Completed in "+moves+" moves. Click New Round.";
-}
-}
-
-function move(dir){
-if(!graph.has(current))return;
-const next=graph.get(current)[dir];
-if(!next){return;}
-if(blocked.has(next)){return;}
-moves++;
-updateHUD();
-setCurrent(next);
+function makePackC(){
+  return {
+    key:"C",
+    requiredSections: ["SUMMARY","SKILLS","EXPERIENCE","PROJECTS","CERTS","EDUCATION"],
+    corridorTokens: chunkTokens([
+      "ADDRESS","123 MAIN","EMAIL","PHONE",
+      "SUMMARY","PROCESS","IMPROVE","ANALYTICS",
+      "SKILLS","PYTHON","EXCEL","GA4","SEO",
+      "EXPERIENCE","REPORTING","SAVED 2H/WK","QA","20% FASTER",
+      "PROJECTS","DATA CLEAN","DASHBOARD","WEEKLY",
+      "CERTS","GA4 CERT","ACCESSIB",
+      "EDUCATION","BA COMM","05/2023"
+    ]),
+    decoyTokens: chunkTokens([
+      "AWESOME","BEST","SUPER","COOL",
+      "SCRIPT FONT","SKILL BARS","TWO COLUMN","TABLE",
+      "ICONS","TEXT BOX","VAGUE","GENERIC","HARDWORK"
+    ])
+  };
 }
 
-window.addEventListener("keydown",e=>{
-if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)){
-e.preventDefault();
-if(e.key==="ArrowUp")move("up");
-if(e.key==="ArrowDown")move("down");
-if(e.key==="ArrowLeft")move("left");
-if(e.key==="ArrowRight")move("right");
+// split phrases into small chunks that fit in 44px-ish cells
+function chunkTokens(items){
+  const out = [];
+  for(const s of items){
+    const clean = s.trim();
+    if(!clean) continue;
+    // break on spaces into chunks of <= 8 chars where possible
+    const parts = clean.split(/\s+/);
+    for(const p of parts){
+      if(p.length <= 8) out.push(p.toUpperCase());
+      else{
+        // hard-split long tokens
+        for(let i=0;i<p.length;i+=8){
+          out.push(p.slice(i,i+8).toUpperCase());
+        }
+      }
+    }
+  }
+  return out;
 }
-},{passive:false});
+
+// --- Maze generation ---
+function makeEmptyGrid(){
+  return Array.from({length:ROWS}, ()=>Array.from({length:COLS}, ()=>({
+    kind:"wall", // "wall" | "open" | "trap"
+    text:""
+  })));
+}
+
+// Perfect maze on odd grid using DFS carve
+function carveMaze(){
+  cells = makeEmptyGrid();
+
+  // Start with all walls; carve passages on odd coordinates
+  function neighbors2(x,y){
+    const dirs = [
+      {dx:0, dy:-2}, {dx:0, dy:2}, {dx:-2, dy:0}, {dx:2, dy:0}
+    ];
+    return dirs
+      .map(d => ({x:x+d.dx, y:y+d.dy, wx:x+d.dx/2, wy:y+d.dy/2}))
+      .filter(n => inBounds(n.x,n.y));
+  }
+
+  // Carve starting from (1,1)
+  const stack = [{x:1,y:1}];
+  cells[1][1].kind="open";
+
+  while(stack.length){
+    const cur = stack[stack.length-1];
+    const nbs = neighbors2(cur.x,cur.y).filter(n => cells[n.y][n.x].kind==="wall");
+    if(!nbs.length){
+      stack.pop();
+      continue;
+    }
+    const pick = nbs[Math.floor(Math.random()*nbs.length)];
+    // carve wall between
+    cells[pick.wy][pick.wx].kind="open";
+    cells[pick.y][pick.x].kind="open";
+    stack.push({x:pick.x,y:pick.y});
+  }
+
+  // Ensure outer corners are connected by opening borders near them
+  // Open (0,0) and connect to maze
+  openAndConnectCorner(0,0, 1,1);
+  openAndConnectCorner(COLS-1, ROWS-1, COLS-2, ROWS-2);
+
+  start = {x:0,y:0};
+  end   = {x:COLS-1,y:ROWS-1};
+}
+
+function openAndConnectCorner(cx,cy, nx,ny){
+  cells[cy][cx].kind="open";
+  // carve a simple corridor from corner toward nearest open cell
+  let x=cx, y=cy;
+  while(x!==nx){ x += (nx> x ? 1 : -1); cells[y][x].kind="open"; }
+  while(y!==ny){ y += (ny> y ? 1 : -1); cells[y][x].kind="open"; }
+  cells[ny][nx].kind="open";
+}
+
+// Stamp big ATS “trap” rectangles as walls you must route around
+function stampTraps(packKey){
+  // Different trap layouts per pack to keep rounds fresh
+  const layouts = {
+    A: [
+      {x:18,y:1,w:10,h:4,label:["SCRIPT","FONT"]},
+      {x:2,y:7,w:10,h:4,label:["TWO","COL"]},
+      {x:20,y:9,w:9,h:4,label:["TEXT","BOX"]},
+      {x:6,y:15,w:11,h:4,label:["TABLE"]},
+      {x:21,y:16,w:9,h:4,label:["ICON","ONLY"]},
+    ],
+    B: [
+      {x:2,y:2,w:12,h:4,label:["ICON","ONLY"]},
+      {x:18,y:6,w:11,h:4,label:["TWO","COL"]},
+      {x:4,y:10,w:10,h:4,label:["SCRIPT","FONT"]},
+      {x:20,y:13,w:9,h:4,label:["TABLE"]},
+      {x:8,y:16,w:11,h:4,label:["TEXT","BOX"]},
+    ],
+    C: [
+      {x:3,y:3,w:12,h:4,label:["TABLE"]},
+      {x:18,y:2,w:11,h:4,label:["SCRIPT","FONT"]},
+      {x:6,y:9,w:11,h:4,label:["TWO","COL"]},
+      {x:20,y:10,w:9,h:4,label:["ICON","ONLY"]},
+      {x:14,y:16,w:13,h:4,label:["KEYWORD","SPAM"]},
+    ]
+  };
+
+  const traps = layouts[packKey] || layouts.A;
+
+  for(const t of traps){
+    for(let yy=t.y; yy<t.y+t.h; yy++){
+      for(let xx=t.x; xx<t.x+t.w; xx++){
+        if(!inBounds(xx,yy)) continue;
+        // Keep start/end open
+        if((xx===start.x && yy===start.y) || (xx===end.x && yy===end.y)) continue;
+        cells[yy][xx].kind = "trap";
+        cells[yy][xx].text = "";
+      }
+    }
+    // Put label chunks along top row of trap block
+    const labelTokens = chunkTokens(t.label);
+    for(let i=0;i<labelTokens.length;i++){
+      const xx = t.x + 1 + i;
+      const yy = t.y + 1;
+      if(inBounds(xx,yy)) cells[yy][xx].text = labelTokens[i];
+    }
+  }
+}
+
+// Add extra openings to create multiple branches (still maze-like)
+function addDetours(){
+  // randomly open some walls to create more alternate corridors (loops)
+  // (kept modest so it stays maze-y)
+  for(let i=0;i<55;i++){
+    const x = 1 + Math.floor(Math.random()*(COLS-2));
+    const y = 1 + Math.floor(Math.random()*(ROWS-2));
+    // don’t punch holes inside traps
+    if(cells[y][x].kind === "trap") continue;
+    // open some walls
+    if(cells[y][x].kind === "wall"){
+      cells[y][x].kind = "open";
+    }
+  }
+}
+
+// Ensure there is a valid path from start to end avoiding walls/traps
+function hasPath(){
+  const q = [{x:start.x,y:start.y}];
+  const seen = new Set([key(start.x,start.y)]);
+  const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
+
+  while(q.length){
+    const p = q.shift();
+    if(p.x===end.x && p.y===end.y) return true;
+    for(const d of dirs){
+      const nx=p.x+d.dx, ny=p.y+d.dy;
+      if(!inBounds(nx,ny)) continue;
+      if(seen.has(key(nx,ny))) continue;
+      const c = cells[ny][nx];
+      if(c.kind !== "open") continue;
+      seen.add(key(nx,ny));
+      q.push({x:nx,y:ny});
+    }
+  }
+  return false;
+}
+
+// Compute shortest path to seed “corridor tokens” in order (so it reads like a resume path)
+function shortestPath(){
+  const prev = new Map();
+  const q = [{x:start.x,y:start.y}];
+  const seen = new Set([key(start.x,start.y)]);
+  const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
+
+  while(q.length){
+    const p=q.shift();
+    if(p.x===end.x && p.y===end.y) break;
+    for(const d of dirs){
+      const nx=p.x+d.dx, ny=p.y+d.dy;
+      if(!inBounds(nx,ny)) continue;
+      if(seen.has(key(nx,ny))) continue;
+      const c=cells[ny][nx];
+      if(c.kind!=="open") continue;
+      seen.add(key(nx,ny));
+      prev.set(key(nx,ny), key(p.x,p.y));
+      q.push({x:nx,y:ny});
+    }
+  }
+
+  // reconstruct
+  const path = [];
+  let curKey = key(end.x,end.y);
+  if(!prev.has(curKey) && !(start.x===end.x && start.y===end.y)) return [];
+  path.push({x:end.x,y:end.y});
+  while(curKey !== key(start.x,start.y)){
+    const pk = prev.get(curKey);
+    if(!pk) break;
+    const [px,py] = pk.split(",").map(Number);
+    path.push({x:px,y:py});
+    curKey = pk;
+  }
+  path.reverse();
+  return path;
+}
+
+function assignTokens(pack){
+  // Clear previous text (keep trap labels if present)
+  for(let y=0;y<ROWS;y++){
+    for(let x=0;x<COLS;x++){
+      if(cells[y][x].kind==="open"){
+        cells[y][x].text = "";
+      }
+    }
+  }
+
+  // Seed the solution path with “resume corridor” tokens (in order)
+  const path = shortestPath();
+  const corridor = pack.corridorTokens.slice();
+  let idx = 0;
+
+  for(const p of path){
+    // Keep start and end explicit
+    if(p.x===start.x && p.y===start.y){
+      cells[p.y][p.x].text = "ADDRESS";
+      continue;
+    }
+    if(p.x===end.x && p.y===end.y){
+      cells[p.y][p.x].text = "EDUCATION";
+      continue;
+    }
+    cells[p.y][p.x].text = corridor[idx % corridor.length] || "ATS";
+    idx++;
+  }
+
+  // Fill remaining open cells with decoys / neutral filler
+  const decoys = pack.decoyTokens.slice();
+  const neutral = chunkTokens(["SUMMARY","SKILLS","EXPERIENCE","PROJECTS","CERTS","DATES","IMPACT","TOOLS","RESULTS"]);
+
+  for(let y=0;y<ROWS;y++){
+    for(let x=0;x<COLS;x++){
+      if(cells[y][x].kind!=="open") continue;
+      if(cells[y][x].text) continue;
+
+      // sprinkle decoys more heavily to increase “maze readability”
+      const r = Math.random();
+      if(r < 0.45 && decoys.length){
+        cells[y][x].text = decoys[Math.floor(Math.random()*decoys.length)];
+      }else{
+        cells[y][x].text = neutral[Math.floor(Math.random()*neutral.length)];
+      }
+    }
+  }
+
+  // Ensure the always-present sections show up conspicuously somewhere on open cells
+  // (We stamp these tokens into reachable areas by overwriting a few open cells.)
+  const must = pack.requiredSections;
+  const openList = [];
+  for(let y=0;y<ROWS;y++){
+    for(let x=0;x<COLS;x++){
+      if(cells[y][x].kind==="open") openList.push({x,y});
+    }
+  }
+  // place them spaced out
+  for(let i=0;i<must.length;i++){
+    const spot = openList[Math.floor((openList.length-1) * (i+1)/(must.length+1))];
+    if(spot){
+      // don’t overwrite start/end
+      if((spot.x===start.x && spot.y===start.y) || (spot.x===end.x && spot.y===end.y)) continue;
+      cells[spot.y][spot.x].text = must[i];
+    }
+  }
+}
+
+// --- Rendering & Movement ---
+function render(){
+  gridEl.style.gridTemplateColumns = `repeat(${COLS}, 44px)`;
+
+  gridEl.innerHTML = "";
+  for(let y=0;y<ROWS;y++){
+    for(let x=0;x<COLS;x++){
+      const c = cells[y][x];
+      const d = document.createElement("div");
+      d.className = "cell";
+
+      if(c.kind==="wall") d.classList.add("wall");
+      if(c.kind==="open") d.classList.add("open");
+      if(c.kind==="trap") d.classList.add("trap");
+
+      // show text only on open and trap labels
+      if(c.kind==="open" || (c.kind==="trap" && c.text)){
+        d.textContent = c.text || "";
+      }else{
+        d.textContent = "";
+      }
+
+      // cursor/path styling
+      const k = key(x,y);
+      if(visited.has(k)) d.classList.add("visited");
+      if(player.x===x && player.y===y) d.classList.add("current");
+
+      // Start/End badges
+      if(x===start.x && y===start.y){
+        const b = document.createElement("div");
+        b.className="badge";
+        b.textContent="START";
+        d.appendChild(b);
+      }
+      if(x===end.x && y===end.y){
+        const b = document.createElement("div");
+        b.className="badge";
+        b.textContent="FINISH";
+        d.appendChild(b);
+      }
+
+      gridEl.appendChild(d);
+    }
+  }
+}
+
+function tryMove(dx,dy){
+  const nx = player.x + dx;
+  const ny = player.y + dy;
+  if(!inBounds(nx,ny)){
+    beep(180, 35, 0.05);
+    return;
+  }
+  const dest = cellAt(nx,ny);
+  if(dest.kind !== "open"){
+    // wall or trap
+    beep(160, 45, 0.06);
+    return;
+  }
+
+  player = {x:nx,y:ny};
+  moves++;
+  updateHUD();
+  visited.add(key(nx,ny));
+  beep(520, 30, 0.05);
+
+  render();
+  scrollPlayerIntoView();
+
+  if(nx===end.x && ny===end.y){
+    progressPill.textContent = "Completed";
+    setStatus(`✅ Completed in <strong>${moves}</strong> moves. Click <strong>New Round</strong> for a new resume maze.`);
+  }else{
+    progressPill.textContent = `Position: (${nx+1},${ny+1})`;
+  }
+}
+
+function scrollPlayerIntoView(){
+  // Bring current cell roughly into view inside the scroll container
+  // (works best after render; we locate the Nth child)
+  const idx = player.y * COLS + player.x;
+  const el = gridEl.children[idx];
+  if(el) el.scrollIntoView({block:"center", inline:"center"});
+}
+
+// --- Round control ---
+function buildRound(){
+  moves = 0;
+  visited = new Set([key(start.x,start.y)]);
+  updateHUD();
+
+  const pack = PACKS[(round-1) % PACKS.length];
+  variantPill.textContent = `Pack: ${pack.key}`;
+  metaEl.textContent = "This resume is a word-chunk maze. Bad formatting appears as blocked blocks you must route around.";
+
+  // Generate until we have a valid path (because traps can occasionally sever)
+  let attempts = 0;
+  while(true){
+    attempts++;
+    carveMaze();
+    stampTraps(pack.key);
+    addDetours();
+    if(hasPath()) break;
+    if(attempts > 25){
+      // fail-safe: regenerate without detours
+      carveMaze();
+      stampTraps(pack.key);
+      if(hasPath()) break;
+    }
+  }
+
+  assignTokens(pack);
+  player = {x:start.x,y:start.y};
+  progressPill.textContent = "Start: Address";
+  render();
+  scrollPlayerIntoView();
+  setStatus(`<strong>Goal:</strong> Navigate to <strong>Education</strong> in the bottom-right. ATS traps are blocked regions you must route around.`);
+}
+
+function newRound(){
+  round++;
+  buildRound();
+}
 
 function restart(){
-moves=0;
-visited.clear();
-document.querySelectorAll(".hot").forEach(el=>{
-el.classList.remove("visited","current");
-});
-updateHUD();
-setCurrent("addr");
+  moves = 0;
+  visited = new Set([key(start.x,start.y)]);
+  updateHUD();
+  player = {x:start.x,y:start.y};
+  progressPill.textContent = "Start: Address";
+  render();
+  scrollPlayerIntoView();
+  setStatus(`<strong>Restarted.</strong> Start at Address and route around blocked ATS traps.`);
 }
 
-load();
-updateHUD();
-</script>
+// keyboard controls (arrow keys only)
+window.addEventListener("keydown", (e) => {
+  const k = e.key;
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(k)){
+    e.preventDefault();
+    if(k==="ArrowUp") tryMove(0,-1);
+    if(k==="ArrowDown") tryMove(0,1);
+    if(k==="ArrowLeft") tryMove(-1,0);
+    if(k==="ArrowRight") tryMove(1,0);
+  }
+}, {passive:false});
 
+// init
+updateHUD();
+buildRound();
+</script>
 </body>
 </html>
