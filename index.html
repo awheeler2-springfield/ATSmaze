@@ -1,143 +1,223 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ATS Resume Maze — Hybrid Experience (C)</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ATS Resume Maze — Resume Layout (Hybrid C)</title>
 
 <style>
-  body { font-family: Arial, sans-serif; margin: 0; display: flex; height: 100vh; }
+:root{
+  --bg:#f3f3f3;
+  --paper:#fff;
+  --ink:#111;
+  --ui:#ddd;
+  --nav:#1D3461;
 
-  #rail {
-    width: 360px;
-    background: #1D3461;
-    color: white;
-    padding: 20px;
-    box-sizing: border-box;
-    overflow: auto;
-  }
+  --yellow:#ffe86a;
+  --tealbg:#F0FAFB;
+  --teal:#0A6E6E;
+  --red:#ff8a8a;
 
-  #rail h2 { margin-top: 0; }
-  .stat { margin: 8px 0; }
-  .btnRow { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  --muted:#6b6b6b;
+}
 
-  button {
-    cursor: pointer;
-    border: none;
-    padding: 10px 12px;
-    font-weight: bold;
-    border-radius: 6px;
-  }
-  #resetBtn { background: #FFFBF0; color: #1D3461; }
-  #resetBtn:hover { filter: brightness(0.95); }
+body{
+  margin:0;
+  background:var(--bg);
+  font-family: Georgia, "Times New Roman", serif;
+  color:var(--ink);
+}
 
-  #mazeWrap {
-    flex: 1;
-    background: #f5f5f5;
-    padding: 30px;
-    overflow: auto;
-  }
+/* Left rail */
+.rail{
+  position:fixed;
+  left:0; top:0;
+  width:340px;
+  height:100vh;
+  background:var(--nav);
+  color:#fff;
+  padding:16px;
+  box-sizing:border-box;
+  overflow:auto;
+}
+.rail h2{ margin:0 0 10px; font-size:18px; font-family: Arial, sans-serif; }
+.rail .stat{ margin:8px 0; font-family: Arial, sans-serif; }
+.rail button{
+  cursor:pointer;
+  border:none;
+  padding:10px 12px;
+  font-weight:bold;
+  border-radius:6px;
+  background:#FFFBF0;
+  color:var(--nav);
+  margin-top:10px;
+}
+.rail button:hover{ filter:brightness(0.95); }
 
-  #mazeTitle {
-    max-width: 980px;
-    margin: 0 auto 12px auto;
-    color: #333;
-    font-weight: bold;
-  }
+#pathBox{ margin-top:12px; font-family: Arial, sans-serif; font-size:0.86rem; }
+#pathBox code{
+  display:block;
+  background:rgba(255,255,255,0.12);
+  padding:8px;
+  border-radius:6px;
+  margin-top:6px;
+  word-break:break-word;
+}
 
-  #maze {
-    max-width: 980px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(4, 220px);
-    gap: 14px;
-    justify-content: center;
-    align-content: start;
-  }
+#report{ margin-top:16px; font-family: Arial, sans-serif; font-size:0.92rem; line-height:1.35; }
 
-  .node {
-    background: white;
-    border: 2px solid #ddd;
-    padding: 10px 12px;
-    text-align: center;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.15s ease;
-    user-select: none;
-    border-radius: 8px;
-  }
+/* Resume page */
+.page{
+  margin-left:340px;
+  padding:30px 20px;
+}
+.resume{
+  max-width:980px;
+  margin:0 auto;
+  background:var(--paper);
+  padding:46px 64px;
+  box-shadow:0 2px 14px rgba(0,0,0,.08);
+}
 
-  .visited { background: #FFFBF0; border-color: #C96A00; }
-  .current { background: #F0FAFB; border-color: #0A6E6E; }
-  .available { border-color: #0A6E6E; }
-  .disabled { pointer-events: none; opacity: 0.35; }
+.section{ margin-top:22px; }
+.section-title{
+  font-weight:bold;
+  border-bottom:1px solid #000;
+  padding-bottom:4px;
+  margin-bottom:10px;
+  letter-spacing:0.4px;
+}
 
-  .tag {
-    display: inline-block;
-    font-weight: normal;
-    font-size: 0.75rem;
-    opacity: 0.8;
-    margin-top: 6px;
-  }
+/* Clickable nodes (resume-integrated) */
+.node{
+  display:inline-block;
+  padding:2px 4px;
+  border-radius:3px;
+  cursor:pointer;
+}
+.node.disabled{ pointer-events:none; opacity:0.45; }
+.node.available{ outline:2px solid rgba(10,110,110,0.35); outline-offset:2px; }
+.node.visited{ background:var(--yellow); opacity:.92; }
+.node.current{ background:var(--tealbg); outline:2px solid var(--teal); outline-offset:2px; }
+.node.bad{ background:var(--red); }
 
-  #diagnostic {
-    margin-top: 16px;
-    font-size: 0.92rem;
-    line-height: 1.35;
-  }
+/* Experience zone styling */
+.exp-grid{
+  margin-top:10px;
+  padding:12px;
+  border:1px solid var(--ui);
+  border-radius:8px;
+  background:#fafafa;
+}
+.exp-grid h4{
+  margin:0 0 8px;
+  font-family: Arial, sans-serif;
+  font-size:0.92rem;
+  color:#333;
+}
+.exp-grid .row{
+  margin:6px 0;
+}
+.badge{
+  display:inline-block;
+  font-family: Arial, sans-serif;
+  font-size:0.75rem;
+  color:var(--muted);
+  margin-left:6px;
+}
+.smallnote{
+  margin-top:8px;
+  font-family: Arial, sans-serif;
+  font-size:0.82rem;
+  color:var(--muted);
+}
 
-  #pathBox {
-    margin-top: 10px;
-    font-size: 0.85rem;
-    line-height: 1.3;
-    opacity: 0.95;
-  }
-  #pathBox code {
-    display: block;
-    background: rgba(255,255,255,0.12);
-    padding: 8px;
-    border-radius: 6px;
-    margin-top: 6px;
-    word-break: break-word;
-  }
+/* Bullets */
+ul{ margin:0 0 0 22px; }
+li{ margin:6px 0; }
 </style>
 </head>
 
 <body>
 
-<div id="rail">
+<div class="rail">
   <h2>ATS Resume Maze</h2>
 
   <div class="stat"><strong>Moves:</strong> <span id="moveCount">0</span></div>
   <div class="stat"><strong>Score:</strong> <span id="score">100</span></div>
   <div class="stat"><strong>Best (this device):</strong> <span id="bestScore">—</span></div>
 
-  <div class="btnRow">
-    <button id="resetBtn" type="button">Reset Run</button>
-  </div>
+  <button id="resetBtn" type="button">Reset Run</button>
 
   <div id="pathBox">
     <strong>Path (this run):</strong>
     <code id="pathText">header</code>
   </div>
 
-  <div id="diagnostic"></div>
+  <div id="report"></div>
 </div>
 
-<div id="mazeWrap">
-  <div id="mazeTitle">Click only adjacent choices. Experience includes a fixed backbone + randomized side branches each run.</div>
-  <div id="maze"></div>
+<div class="page">
+  <div class="resume">
+
+    <div class="section">
+      <div class="section-title">HEADER</div>
+      <p id="headerLine"></p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">SUMMARY</div>
+      <p id="summaryLine"></p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">SKILLS</div>
+      <p id="skillsLine"></p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">PROFESSIONAL EXPERIENCE</div>
+
+      <!-- Backbone bullets (fixed) -->
+      <ul id="expBackbone"></ul>
+
+      <!-- Random detours (changes per run) -->
+      <div class="exp-grid">
+        <h4>Experience Drafting Detours (changes every run)</h4>
+        <div id="expDetours"></div>
+        <div class="smallnote">
+          These detours are not “fail states.” They add moves and may trigger ATS flags that appear only at the end.
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">PROJECTS</div>
+      <p id="projectsLine"></p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">CERTIFICATIONS</div>
+      <p id="certsLine"></p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">EDUCATION</div>
+      <p id="educationLine"></p>
+    </div>
+
+  </div>
 </div>
 
 <script type="module">
 /* =========================================================
-   HYBRID EXPERIENCE (C)
-   - Fixed backbone path through Experience
-   - Random side branches each run
-   - End-only pedagogical report
+   Resume Skin + Hybrid Engine (Option 1 + C)
+   - Coarse nodes for sections
+   - Dense Experience: fixed backbone + randomized detours
+   - End-only report
 ========================================================= */
 
-/* ---------- Best score persistence ---------- */
+/* ---------- Persistence ---------- */
 const BEST_KEY = "atsMazeBestScore";
 function getBestScore() {
   const raw = localStorage.getItem(BEST_KEY);
@@ -154,41 +234,38 @@ function updateBestScoreUI() {
   document.getElementById("bestScore").textContent = best === null ? "—" : String(best);
 }
 
-/* ---------- Trap explanations (end-only) ---------- */
+/* ---------- Traps (end-only) ---------- */
 const trapExplanations = {
   weak_verbs: "Weak or passive verbs reduce ATS keyword strength and clarity.",
   no_metrics: "No quantified impact reduces ranking and credibility signals.",
   generic_alignment: "Generic experience (not tailored) lowers match relevance.",
   tables_layout: "Tables/columns can scramble parsing and break field extraction.",
-  graphics_icons: "Graphics/icons can hide text from ATS or introduce noise.",
+  graphics_icons: "Icons/graphics can hide text from ATS or introduce noise.",
   keyword_dump: "Keyword dumping can look spammy and reduce semantic match quality."
 };
 
-function trapLabel(type) {
-  const map = {
-    weak_verbs: "Weak Verbs",
-    no_metrics: "No Metrics",
-    generic_alignment: "Generic Alignment",
-    tables_layout: "Tables/Columns",
-    graphics_icons: "Graphics/Icons",
-    keyword_dump: "Keyword Dumping"
-  };
-  return map[type] ?? type;
-}
+const trapLabels = {
+  weak_verbs: "Weak verbs",
+  no_metrics: "No metrics",
+  generic_alignment: "Generic alignment",
+  tables_layout: "Tables/columns",
+  graphics_icons: "Icons/graphics",
+  keyword_dump: "Keyword dumping"
+};
 
-/* ---------- Graph + Nodes (rebuilt each run) ---------- */
-let nodes = {};           // id -> { id, label, tag? }
-let graph = {};           // id -> [neighborIds]
-let experienceNodeIds = []; // for cleanup/regeneration
+/* ---------- Graph + Nodes ---------- */
+let nodes = {};      // id -> { id, label, tag, el }
+let graph = {};      // id -> [neighbors]
+let experienceSideIds = []; // exp_s*
 
-function addNode(id, label, tag = "") {
-  nodes[id] = { id, label, tag };
+function addNode(id, label, tag="") {
+  nodes[id] = { id, label, tag, el: null };
   if (!graph[id]) graph[id] = [];
 }
 
-function connect(a, b) {
-  if (!graph[a]) graph[a] = [];
-  if (!graph[b]) graph[b] = [];
+function connect(a,b) {
+  if (!graph[a]) graph[a]=[];
+  if (!graph[b]) graph[b]=[];
   if (!graph[a].includes(b)) graph[a].push(b);
   if (!graph[b].includes(a)) graph[b].push(a);
 }
@@ -214,9 +291,9 @@ function pick(arr) {
 function buildHybridGraph() {
   nodes = {};
   graph = {};
-  experienceNodeIds = [];
+  experienceSideIds = [];
 
-  // Fixed spine (sections)
+  // Coarse “section nodes”
   addNode("header", "Header", "section");
   addNode("summary", "Summary", "section");
   addNode("skills", "Skills", "section");
@@ -224,89 +301,79 @@ function buildHybridGraph() {
   addNode("certifications", "Certifications", "section");
   addNode("education", "Education", "section");
 
-  connect("header", "summary");
-  connect("summary", "skills");
+  connect("header","summary");
+  connect("summary","skills");
 
-  // Experience entry/exit nodes
-  addNode("exp_entry", "Experience", "experience");
-  addNode("exp_exit", "Exit Experience", "experience");
+  // Experience entry/exit
+  addNode("exp_entry", "Experience Entry", "experience");
+  addNode("exp_exit", "Experience Exit", "experience");
+  connect("skills","exp_entry");
+  connect("exp_exit","projects");
 
-  connect("skills", "exp_entry");
-  connect("exp_exit", "projects");
-
-  // Fixed backbone through Experience (always solvable, always teachable)
+  // Fixed backbone (bullets)
   const backbone = [
-    { id: "exp_b1", label: "Role + Company", tag: "backbone" },
-    { id: "exp_b2", label: "Strong Action Verbs", tag: "backbone" },
-    { id: "exp_b3", label: "Quantified Impact", tag: "backbone" },
-    { id: "exp_b4", label: "Tailored Keywords", tag: "backbone" },
-    { id: "exp_b5", label: "Clean Formatting", tag: "backbone" }
+    { id:"exp_b1", label:"Role + Company context", tag:"backbone" },
+    { id:"exp_b2", label:"Strong action verbs", tag:"backbone" },
+    { id:"exp_b3", label:"Quantified impact", tag:"backbone" },
+    { id:"exp_b4", label:"Tailored keywords to target role", tag:"backbone" },
+    { id:"exp_b5", label:"Clean, ATS-friendly formatting", tag:"backbone" }
   ];
+  backbone.forEach(n => addNode(n.id, n.label, n.tag));
 
-  backbone.forEach(n => {
-    addNode(n.id, n.label, n.tag);
-    experienceNodeIds.push(n.id);
-  });
+  connect("exp_entry","exp_b1");
+  connect("exp_b1","exp_b2");
+  connect("exp_b2","exp_b3");
+  connect("exp_b3","exp_b4");
+  connect("exp_b4","exp_b5");
+  connect("exp_b5","exp_exit");
 
-  connect("exp_entry", "exp_b1");
-  connect("exp_b1", "exp_b2");
-  connect("exp_b2", "exp_b3");
-  connect("exp_b3", "exp_b4");
-  connect("exp_b4", "exp_b5");
-  connect("exp_b5", "exp_exit");
-
-  // Randomized side branches (replay variety)
-  // These represent choices that can be suboptimal (traps) but recoverable.
+  // Random detours (recoverable)
   const sideTypes = [
-    { type: "weak_verbs", label: "Weak Verbs", tag: "trap" },
-    { type: "no_metrics", label: "No Metrics", tag: "trap" },
-    { type: "generic_alignment", label: "Generic Alignment", tag: "trap" },
-    { type: "tables_layout", label: "Tables/Columns", tag: "trap" },
-    { type: "graphics_icons", label: "Icons/Graphics", tag: "trap" },
-    { type: "keyword_dump", label: "Keyword Dumping", tag: "trap" }
+    { type:"weak_verbs", label:"Weak verbs (vague duties)" },
+    { type:"no_metrics", label:"No metrics (no outcomes)" },
+    { type:"generic_alignment", label:"Generic alignment (not tailored)" },
+    { type:"tables_layout", label:"Tables/columns formatting" },
+    { type:"graphics_icons", label:"Icons/graphics for bullets" },
+    { type:"keyword_dump", label:"Keyword dumping" }
   ];
 
-  // Attach 0–2 branches per backbone node (except the last)
-  const attachPoints = ["exp_b1", "exp_b2", "exp_b3", "exp_b4"];
+  const attachPoints = ["exp_b1","exp_b2","exp_b3","exp_b4"];
+  const recoverMap = { exp_b1:"exp_b2", exp_b2:"exp_b3", exp_b3:"exp_b4", exp_b4:"exp_b5" };
+
   let sideCounter = 0;
 
   for (const anchor of attachPoints) {
     const branchCount = randInt(0, 2);
 
-    for (let i = 0; i < branchCount; i++) {
+    for (let i=0; i<branchCount; i++) {
       sideCounter++;
       const t = pick(sideTypes);
       const sid = `exp_s${sideCounter}`;
-
       addNode(sid, t.label, `trap:${t.type}`);
-      experienceNodeIds.push(sid);
+      experienceSideIds.push(sid);
 
-      // Connect branch to anchor
       connect(anchor, sid);
 
-      // Optional: make a tiny 2-step branch for variety
+      // 45% chance of 2-step branch that returns forward (recovery)
       if (Math.random() < 0.45) {
         sideCounter++;
         const t2 = pick(sideTypes);
         const sid2 = `exp_s${sideCounter}`;
         addNode(sid2, t2.label, `trap:${t2.type}`);
-        experienceNodeIds.push(sid2);
-        connect(sid, sid2);
+        experienceSideIds.push(sid2);
 
-        // Recovery back to the backbone one step ahead (keeps it playable)
-        // e.g., exp_b2 branch can return to exp_b3
-        const recoverMap = { exp_b1: "exp_b2", exp_b2: "exp_b3", exp_b3: "exp_b4", exp_b4: "exp_b5" };
+        connect(sid, sid2);
         connect(sid2, recoverMap[anchor]);
       } else {
-        // Single-step branch recovers back to same anchor (low-cost detour)
+        // single-step detour loops back
         connect(sid, anchor);
       }
     }
   }
 
   // Continue spine
-  connect("projects", "certifications");
-  connect("certifications", "education");
+  connect("projects","certifications");
+  connect("certifications","education");
 
   validateGraph(graph);
 }
@@ -317,7 +384,7 @@ function createInitialState() {
     currentNode: "header",
     visited: new Set(["header"]),
     moves: 0,
-    trapsHit: new Map(), // trapType -> count
+    trapsHit: new Map(), // type -> count
     complete: false,
     path: ["header"]
   };
@@ -328,15 +395,14 @@ let state = createInitialState();
 /* ---------- Engine ---------- */
 function recordTrapHit(s, nodeId) {
   const tag = nodes[nodeId]?.tag ?? "";
-  // trap tags look like "trap:weak_verbs"
   if (!tag.startsWith("trap:")) return;
   const type = tag.split(":")[1];
   s.trapsHit.set(type, (s.trapsHit.get(type) ?? 0) + 1);
 }
 
 function attemptMove(s, targetNode) {
-  if (s.complete) return { success: false };
-  if (!graph[s.currentNode]?.includes(targetNode)) return { success: false };
+  if (s.complete) return { success:false };
+  if (!graph[s.currentNode]?.includes(targetNode)) return { success:false };
 
   s.moves++;
   s.currentNode = targetNode;
@@ -346,87 +412,167 @@ function attemptMove(s, targetNode) {
   recordTrapHit(s, targetNode);
 
   if (targetNode === "education") s.complete = true;
-
-  return { success: true };
+  return { success:true };
 }
 
 function calculateScore(s) {
-  // Replay-oriented: reward efficient navigation + avoid trap types
-  const trapCountTotal = [...s.trapsHit.values()].reduce((a,b)=>a+b, 0);
-  return Math.max(0, 100 - s.moves - (trapCountTotal * 8));
+  const trapTotal = [...s.trapsHit.values()].reduce((a,b)=>a+b,0);
+  return Math.max(0, 100 - s.moves - (trapTotal * 8));
 }
 
-/* ---------- Renderer (rebuild DOM each run) ---------- */
-const mazeEl = document.getElementById("maze");
+/* ---------- DOM helpers ---------- */
+function makeNodeSpan(id, textOverride=null) {
+  const sp = document.createElement("span");
+  sp.className = "node";
+  sp.textContent = (textOverride ?? nodes[id].label);
+  sp.dataset.nodeId = id;
 
-function clearMazeDOM() {
-  mazeEl.innerHTML = "";
-}
-
-function createNodeEl(id) {
-  const el = document.createElement("div");
-  el.className = "node";
-  el.id = id;
-  el.innerHTML = `
-    <div>${nodes[id].label}</div>
-    ${nodes[id].tag ? `<div class="tag">${nodes[id].tag}</div>` : ""}
-  `;
-  el.addEventListener("click", () => {
+  sp.addEventListener("click", () => {
     const result = attemptMove(state, id);
     if (result.success) {
       render(state);
       updateRail(state);
     }
   });
-  return el;
+
+  nodes[id].el = sp;
+  return sp;
 }
 
-function buildMazeDOM() {
-  clearMazeDOM();
+function clearResumeAreas() {
+  document.getElementById("headerLine").innerHTML = "";
+  document.getElementById("summaryLine").innerHTML = "";
+  document.getElementById("skillsLine").innerHTML = "";
+  document.getElementById("projectsLine").innerHTML = "";
+  document.getElementById("certsLine").innerHTML = "";
+  document.getElementById("educationLine").innerHTML = "";
+  document.getElementById("expBackbone").innerHTML = "";
+  document.getElementById("expDetours").innerHTML = "";
+}
 
-  // Order for readability: spine first, then experience cluster, then exit spine.
-  const spineTop = ["header", "summary", "skills"];
-  const spineBottom = ["projects", "certifications", "education"];
+/* ---------- Build Resume DOM (skin) ---------- */
+function buildResumeDOM() {
+  clearResumeAreas();
 
-  spineTop.forEach(id => mazeEl.appendChild(createNodeEl(id)));
+  // HEADER: make it look like a name line + contact, but only the “Header node” is clickable
+  const headerLine = document.getElementById("headerLine");
+  headerLine.appendChild(makeNodeSpan("header", "FIRST LAST"));
+  headerLine.appendChild(document.createTextNode("  •  Springfield, MA  •  email@example.com  •  (555) 555-5555"));
 
-  // Experience cluster ordering: entry, backbone, side nodes, exit
-  const cluster = ["exp_entry", "exp_b1", "exp_b2", "exp_b3", "exp_b4", "exp_b5", "exp_exit"];
-  cluster.forEach(id => mazeEl.appendChild(createNodeEl(id)));
+  // SUMMARY: clickable “Summary node”
+  const summaryLine = document.getElementById("summaryLine");
+  summaryLine.appendChild(makeNodeSpan("summary", "Data-driven analytics professional"));
+  summaryLine.appendChild(document.createTextNode(" with experience translating stakeholder needs into measurable outcomes and ATS-friendly content structure."));
 
-  // Append all side nodes (in creation order)
-  const sideIds = experienceNodeIds.filter(id => id.startsWith("exp_s"));
-  sideIds.forEach(id => mazeEl.appendChild(createNodeEl(id)));
+  // SKILLS: clickable “Skills node”
+  const skillsLine = document.getElementById("skillsLine");
+  skillsLine.appendChild(makeNodeSpan("skills", "GA4 • SEO • Content Strategy • Reporting"));
+  skillsLine.appendChild(document.createTextNode("  (Skills are read by ATS best when presented as plain text, not graphics.)"));
 
-  spineBottom.forEach(id => mazeEl.appendChild(createNodeEl(id)));
+  // EXPERIENCE: entry node is implicit via Skills → Experience Entry; we render Experience Entry/Exit as small inline controls
+  // Backbone bullets (fine-grain)
+  const expList = document.getElementById("expBackbone");
+
+  // Add a small “Experience Entry” chip at the top (clickable)
+  const entryLi = document.createElement("li");
+  entryLi.appendChild(makeNodeSpan("exp_entry", "Enter Experience section"));
+  entryLi.appendChild(document.createElement("span")).className = "badge";
+  expList.appendChild(entryLi);
+
+  const backboneIds = ["exp_b1","exp_b2","exp_b3","exp_b4","exp_b5"];
+  for (const id of backboneIds) {
+    const li = document.createElement("li");
+    li.appendChild(makeNodeSpan(id));
+    li.appendChild(document.createElement("span")).className = "badge";
+    expList.appendChild(li);
+  }
+
+  const exitLi = document.createElement("li");
+  exitLi.appendChild(makeNodeSpan("exp_exit", "Exit Experience section"));
+  expList.appendChild(exitLi);
+
+  // Detours (random) shown as “drafting detours”
+  const detours = document.getElementById("expDetours");
+  if (experienceSideIds.length === 0) {
+    detours.textContent = "No detours generated this run. Reset to get a different Experience landscape.";
+  } else {
+    // render in rows of 2–3 for a “resume-like” box
+    let row = document.createElement("div");
+    row.className = "row";
+    let countInRow = 0;
+
+    for (const sid of experienceSideIds) {
+      const chip = makeNodeSpan(sid);
+      chip.style.marginRight = "10px";
+      chip.style.marginBottom = "6px";
+      chip.style.fontFamily = "Arial, sans-serif";
+      chip.style.fontSize = "0.85rem";
+
+      row.appendChild(chip);
+      countInRow++;
+      if (countInRow >= 2) {
+        detours.appendChild(row);
+        row = document.createElement("div");
+        row.className = "row";
+        countInRow = 0;
+      }
+    }
+    if (row.childNodes.length) detours.appendChild(row);
+  }
+
+  // PROJECTS / CERTIFICATIONS / EDUCATION (coarse nodes)
+  const projectsLine = document.getElementById("projectsLine");
+  projectsLine.appendChild(makeNodeSpan("projects", "ATS Resume Maze (interactive prototype)"));
+  projectsLine.appendChild(document.createTextNode(" — clickthrough adjacency game teaching ATS optimization."))
+
+  const certsLine = document.getElementById("certsLine");
+  certsLine.appendChild(makeNodeSpan("certifications", "Google Analytics Certification"));
+  certsLine.appendChild(document.createTextNode("  •  SEO Foundations"));
+
+  const eduLine = document.getElementById("educationLine");
+  eduLine.appendChild(makeNodeSpan("education", "B.A., Communication"));
+  eduLine.appendChild(document.createTextNode(" — Institution Name"));
+}
+
+/* ---------- Rendering (enable neighbors only) ---------- */
+function applyNodeClasses(el, {visited=false, current=false, available=false, disabled=false, bad=false}) {
+  el.classList.remove("visited","current","available","disabled","bad");
+  if (visited) el.classList.add("visited");
+  if (current) el.classList.add("current");
+  if (available) el.classList.add("available");
+  if (disabled) el.classList.add("disabled");
+  if (bad) el.classList.add("bad");
 }
 
 function render(s) {
-  document.querySelectorAll(".node").forEach(el => {
-    el.classList.remove("visited", "current", "available", "disabled");
-    el.classList.add("disabled");
-  });
+  // Disable everything by default
+  for (const id in nodes) {
+    const el = nodes[id].el;
+    if (!el) continue;
+    applyNodeClasses(el, { disabled:true });
+  }
 
+  // Mark visited
   s.visited.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add("visited");
+    const el = nodes[id]?.el;
+    if (el) applyNodeClasses(el, { visited:true, disabled:true });
   });
 
-  const currentEl = document.getElementById(s.currentNode);
-  if (currentEl) currentEl.classList.add("current");
+  // Mark current
+  const currentEl = nodes[s.currentNode]?.el;
+  if (currentEl) applyNodeClasses(currentEl, { current:true, visited:true, disabled:true });
 
+  // Enable neighbors
   (graph[s.currentNode] ?? []).forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.classList.remove("disabled");
-      el.classList.add("available");
-    }
+    const el = nodes[id]?.el;
+    if (el) applyNodeClasses(el, { available:true });
   });
 
+  // Path display
   document.getElementById("pathText").textContent = s.path.join(" → ");
 }
 
-/* ---------- Rail + End report ---------- */
+/* ---------- Rail + end-only report ---------- */
 function updateRail(s) {
   const score = calculateScore(s);
   document.getElementById("moveCount").textContent = String(s.moves);
@@ -435,38 +581,38 @@ function updateRail(s) {
   if (s.complete) {
     setBestScoreIfHigher(score);
     updateBestScoreUI();
-    showDiagnostic(s, score);
+    showEndReport(s, score);
   }
 }
 
-function showDiagnostic(s, score) {
+function showEndReport(s, score) {
   let html = `<h3>Run Summary</h3>
-    <p><strong>Final score:</strong> ${score}</p>
-    <p><strong>Moves:</strong> ${s.moves}</p>`;
+    <p><strong>Final score:</strong> ${score}<br/>
+       <strong>Moves:</strong> ${s.moves}</p>`;
 
   const trapTypes = [...s.trapsHit.keys()];
   if (trapTypes.length === 0) {
     html += `<p><strong>ATS flags:</strong> none</p>
-             <p>You stayed on the backbone: strong verbs, metrics, tailoring, and clean formatting.</p>`;
+             <p>Backbone stayed strong: verbs + metrics + tailoring + clean formatting.</p>`;
   } else {
     html += `<p><strong>ATS flags triggered:</strong> ${trapTypes.length}</p>`;
     trapTypes.forEach(type => {
       const count = s.trapsHit.get(type);
-      html += `<p><strong>${trapLabel(type)} (x${count}):</strong> ${trapExplanations[type] ?? "—"}</p>`;
+      html += `<p><strong>${trapLabels[type] ?? type} (x${count}):</strong> ${trapExplanations[type] ?? "—"}</p>`;
     });
-    html += `<p style="margin-top:10px; opacity:0.95;">Replay goal: fewer moves + fewer flag types.</p>`;
+    html += `<p style="opacity:0.95; margin-top:10px;">Replay goal: fewer moves and fewer flags.</p>`;
   }
 
-  document.getElementById("diagnostic").innerHTML = html;
+  document.getElementById("report").innerHTML = html;
 }
 
-/* ---------- Reset (rebuild hybrid graph) ---------- */
+/* ---------- Reset ---------- */
 function resetRun() {
   buildHybridGraph();
-  buildMazeDOM();
+  buildResumeDOM();
 
   state = createInitialState();
-  document.getElementById("diagnostic").innerHTML = "";
+  document.getElementById("report").innerHTML = "";
 
   render(state);
   updateRail(state);
@@ -475,9 +621,8 @@ function resetRun() {
 /* ---------- Init ---------- */
 updateBestScoreUI();
 resetRun();
-
 document.getElementById("resetBtn").addEventListener("click", resetRun);
-</script>
 
+</script>
 </body>
 </html>
