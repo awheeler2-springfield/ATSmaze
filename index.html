@@ -3,1082 +3,276 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze — Embedded</title>
+<title>ATS Resume Maze — Realistic Layout</title>
+
 <style>
-  :root{
-    --bg:#fff;
-    --ink:#111;
-    --muted:#444;
-    --rule:#d6d6d6;
-    --grid:#efefef;         /* subtle micro-box lines */
-    --wall:#111;            /* maze walls */
-    --yellow:#ffe86a;
-    --yellow-border:#d1c25d;
-    --shadow:0 2px 10px rgba(0,0,0,.08);
-    --radius:14px;
-    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-  }
-  html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);}
+body{
+  margin:0;
+  background:#f4f4f4;
+  font-family: Georgia, "Times New Roman", serif;
+}
 
-  .wrap{
-    max-width: 1260px;
-    margin:0 auto;
-    padding:16px;
-    display:grid;
-    grid-template-columns: 360px 1fr;
-    gap:14px;
-  }
-  @media(max-width: 980px){ .wrap{grid-template-columns:1fr;} }
+.container{
+  max-width:900px;
+  margin:40px auto;
+  background:#fff;
+  padding:40px 60px;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);
+  position:relative;
+}
 
-  .panel,.paper{
-    border:1px solid var(--rule);
-    border-radius: var(--radius);
-    background:#fff;
-    box-shadow: var(--shadow);
-    overflow:hidden;
-  }
-  .panel header,.paper header{
-    padding:12px 14px;
-    border-bottom:1px solid var(--rule);
-    background:#fff;
-  }
-  h1{margin:0 0 6px;font-size:16px;letter-spacing:.2px}
-  .sub{margin:0;color:var(--muted);font-size:13px;line-height:1.35}
+/* Header */
+.name{
+  text-align:center;
+  font-weight:bold;
+  font-size:28px;
+  letter-spacing:.5px;
+}
 
-  .panel .content{ padding:14px; }
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.contact{
+  text-align:center;
+  margin-top:6px;
+  font-size:14px;
+}
 
-  button{
-    border:1px solid var(--rule);
-    background:#fff;
-    color:var(--ink);
-    border-radius:12px;
-    padding:10px 12px;
-    font-size:14px;
-    cursor:pointer;
-    box-shadow: 0 1px 0 rgba(0,0,0,.04);
-  }
-  .pill{
-    border:1px solid var(--rule);
-    border-radius:999px;
-    padding:8px 10px;
-    background:#fff;
-    font-size:13px;
-    color:var(--muted);
-  }
-  .status{
-    border:1px solid var(--rule);
-    border-radius:12px;
-    padding:10px 12px;
-    background:#fff;
-    font-size:13px;
-    color:var(--muted);
-    line-height:1.35;
-  }
-  .status strong{color:var(--ink);}
-  .kbd{
-    display:inline-block;
-    border:1px solid var(--rule);
-    background:#fff;
-    border-radius:6px;
-    padding:1px 6px;
-    margin:0 2px;
-    font-size:12px;
-    color:var(--muted);
-  }
+.section{
+  margin-top:28px;
+}
 
-  .paper header{
-    display:flex;
-    justify-content:space-between;
-    gap:10px;
-    flex-wrap:wrap;
-    align-items:flex-start;
-  }
-  .paperTitle{
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    min-width:260px;
-  }
-  .paperTitle .title{font-size:16px;font-weight:900;letter-spacing:.2px}
-  .paperTitle .meta{font-size:12px;color:var(--muted)}
+.section-title{
+  font-weight:bold;
+  letter-spacing:.5px;
+  border-bottom:1px solid #000;
+  padding-bottom:4px;
+  margin-bottom:10px;
+}
 
-  /* Resume maze surface */
-  .mazeWrap{ padding: 14px; overflow:auto; background:#fff; }
-  .pageFrame{
-    border:1px solid var(--rule);
-    border-radius:14px;
-    padding:10px;
-    background:#fff;
-    box-shadow: var(--shadow);
-  }
-  .grid{
-    display:grid;
-    gap:0;
-    user-select:none;
-  }
-  .cell{
-    width: 36px;            /* subtle micro-cells */
-    height: 28px;
-    border:1px solid var(--grid);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:10px;
-    line-height:1;
-    color:var(--ink);
-    overflow:hidden;
-    white-space:nowrap;
-    position:relative;
-    background:#fff;
-  }
-  .wall{ border-color: var(--wall); }
-  .locked{ border-color: var(--wall); background:#fff; }
-  .current{ background: var(--yellow); border-color: var(--yellow-border); z-index:2; }
-  .visited{ background: var(--yellow); border-color: var(--yellow-border); opacity:.92; }
+.row{
+  display:flex;
+  justify-content:space-between;
+}
 
-  /* Section framing (visual resume hierarchy) */
-  .secLabel{
-    position:absolute;
-    left:2px; top:2px;
-    font-size:9px;
-    letter-spacing:.12em;
-    font-weight:900;
-    color:#111;
-    background:#fff;
-    padding:1px 6px;
-    border:1px solid var(--rule);
-    border-radius:999px;
-  }
-  .badge{
-    position:absolute;
-    right:2px; top:2px;
-    font-size:9px;
-    border:1px solid var(--rule);
-    border-radius:999px;
-    padding:1px 6px;
-    color:var(--muted);
-    background:#fff;
-  }
+.job-title{
+  font-weight:bold;
+}
+
+.dates{
+  text-align:right;
+  white-space:nowrap;
+}
+
+ul{
+  margin:6px 0 12px 20px;
+}
+
+/* Maze nodes */
+.node{
+  cursor:default;
+  position:relative;
+}
+
+.active{
+  background:#ffe86a;
+}
+
+.blocked{
+  pointer-events:none;
+  opacity:.45;
+}
+
+/* Visible formatting errors */
+.script-font{
+  font-family:cursive;
+}
+
+.two-column{
+  column-count:2;
+  column-gap:40px;
+}
+
+.keyword-spam{
+  font-style:italic;
+}
+
+.game-status{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  background:#fff;
+  padding:8px 12px;
+  border:1px solid #ccc;
+  font-size:13px;
+}
 </style>
 </head>
 
 <body>
-<div class="wrap">
 
-  <section class="panel">
-    <header>
-      <h1>ATS Resume Maze — Embedded</h1>
-      <p class="sub">
-        Navigate a realistic resume using arrow keys. Yellow marks your route.
-        Complete sections in order: <strong>Summary → Skills → Experience → Projects → Certifications → Education</strong>.
-        Errors appear as dead ends or physical barriers.
-      </p>
-    </header>
+<div class="container" id="resume">
 
-    <div class="content">
-      <div class="row">
-        <button id="newBtn" type="button">New Round</button>
-        <button id="restartBtn" type="button">Restart</button>
-        <span class="pill" id="roundPill">Round: 1</span>
-        <span class="pill" id="movesPill">Moves: 0</span>
+  <div class="name">
+    <span class="node" data-id="start">FIRST</span>
+    <span class="node">LAST</span>
+  </div>
+
+  <div class="contact">
+    <span class="node">New York City, NY</span> •
+    <span class="node">email@email.com</span> •
+    <span class="node">(212) 123-4567</span> •
+    <span class="node">linkedin.com/in/username</span>
+  </div>
+
+  <div class="section" data-section="summary">
+    <div class="section-title">SUMMARY</div>
+    <p>
+      <span class="node">Data-driven</span>
+      <span class="node">SEO</span>
+      <span class="node">and</span>
+      <span class="node">analytics</span>
+      <span class="node">specialist</span>
+      <span class="node">with</span>
+      <span class="node">proven</span>
+      <span class="node">performance</span>.
+      <span class="node keyword-spam">SEO SEO SEO SEO</span>
+    </p>
+  </div>
+
+  <div class="section" data-section="skills">
+    <div class="section-title">SKILLS</div>
+    <p class="two-column blocked">
+      Python GA4 SEO A11Y CMS Excel Reporting Dashboard Automation Optimization
+    </p>
+    <p>
+      <span class="node">Python</span>
+      <span class="node">GA4</span>
+      <span class="node">SEO</span>
+      <span class="node">Accessibility</span>
+      <span class="node">Reporting</span>
+    </p>
+  </div>
+
+  <div class="section" data-section="experience">
+    <div class="section-title">PROFESSIONAL EXPERIENCE</div>
+
+    <div class="row">
+      <div class="job-title">
+        <span class="node">Marketing</span>
+        <span class="node">Analyst</span>
       </div>
-
-      <div class="status" id="status" role="status" aria-live="polite">
-        <strong>Controls:</strong>
-        <span class="kbd">↑</span><span class="kbd">↓</span><span class="kbd">←</span><span class="kbd">→</span>
-        <br/>
-        <strong>Rule:</strong> Education stays locked until you traverse each prior section’s corridor gate.
-      </div>
-
-      <div class="status" style="margin-top:10px;">
-        <strong>Design:</strong> multiple valid clean routes, but only one shortest.
-        <br/>
-        <strong>Experience:</strong> largest + densest region.
+      <div class="dates">
+        <span class="node">2021-Present</span>
       </div>
     </div>
-  </section>
 
-  <section class="paper">
-    <header>
-      <div class="paperTitle">
-        <div class="title">Mock Resume (Minimalist Base)</div>
-        <div class="meta" id="meta">Maze is embedded into the resume layout; micro-grid is intentionally subtle.</div>
-      </div>
-      <div class="row" style="margin:0">
-        <span class="pill" id="packPill">Pack: A</span>
-        <span class="pill" id="gatePill">Gate: SUMMARY</span>
-      </div>
-    </header>
+    <ul>
+      <li>
+        <span class="node">Optimized</span>
+        <span class="node">25+</span>
+        <span class="node">pages</span>
+        <span class="node">increasing</span>
+        <span class="node">traffic</span>
+        <span class="node">18%</span>
+      </li>
+      <li>
+        <span class="node">Built</span>
+        <span class="node">dashboard</span>
+        <span class="node">reducing</span>
+        <span class="node">manual</span>
+        <span class="node">work</span>
+        <span class="node">2</span>
+        <span class="node">hours/week</span>
+      </li>
+      <li class="script-font blocked">
+        Implemented paperless booking system beautifully seamlessly elegantly
+      </li>
+      <li>
+        <span class="node">Improved</span>
+        <span class="node">CTR</span>
+        <span class="node">12%</span>
+      </li>
+    </ul>
+  </div>
 
-    <div class="mazeWrap">
-      <div class="pageFrame">
-        <div id="grid" class="grid" aria-label="Resume maze grid"></div>
-      </div>
-    </div>
-  </section>
+  <div class="section" data-section="projects">
+    <div class="section-title">PROJECTS</div>
+    <ul>
+      <li>
+        <span class="node">Content</span>
+        <span class="node">Audit</span>
+        <span class="node">Strategy</span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section" data-section="certifications">
+    <div class="section-title">CERTIFICATIONS</div>
+    <p>
+      <span class="node">GA4</span>
+      <span class="node">Certified</span>
+    </p>
+  </div>
+
+  <div class="section blocked" data-section="education" id="education">
+    <div class="section-title">EDUCATION</div>
+    <p>
+      <span class="node">B.A.</span>
+      <span class="node">Communications</span>
+      <span class="node">2020</span>
+    </p>
+  </div>
 
 </div>
 
+<div class="game-status" id="status">
+Moves: 0 | Target: SUMMARY
+</div>
+
 <script>
-/* =========================
-   Embedded Resume Maze Engine
-   ========================= */
+const nodes = Array.from(document.querySelectorAll(".node"));
+const status = document.getElementById("status");
+const educationSection = document.getElementById("education");
 
-const gridEl = document.getElementById("grid");
-const statusEl = document.getElementById("status");
-const roundPill = document.getElementById("roundPill");
-const movesPill = document.getElementById("movesPill");
-const packPill = document.getElementById("packPill");
-const gatePill = document.getElementById("gatePill");
-const metaEl = document.getElementById("meta");
-
-document.getElementById("newBtn").addEventListener("click", () => newRound());
-document.getElementById("restartBtn").addEventListener("click", () => restart());
-
-let round = 1;
+let currentIndex = 0;
 let moves = 0;
+let stage = 0;
+const order = ["summary","skills","experience","projects","certifications","education"];
 
-const COLS = 40;
-const ROWS = 28;
-
-let cells = [];
-let visited = new Set();
-let player = {x:0,y:0};
-
-let audioCtx = null;
-function beep(freq=520, ms=32, gain=0.05){
-  try{
-    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = "sine";
-    o.frequency.value = freq;
-    g.gain.value = gain;
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start();
-    setTimeout(()=>o.stop(), ms);
-  }catch(e){}
+function update(){
+  nodes.forEach(n=>n.classList.remove("active"));
+  nodes[currentIndex].classList.add("active");
+  status.innerHTML = `Moves: ${moves} | Target: ${order[stage].toUpperCase()}`;
 }
 
-function key(x,y){ return `${x},${y}`; }
-function inBounds(x,y){ return x>=0 && x<COLS && y>=0 && y<ROWS; }
-function at(x,y){ return cells[y][x]; }
-
-function updateHUD(){
-  roundPill.textContent = `Round: ${round}`;
-  movesPill.textContent = `Moves: ${moves}`;
-}
-
-function setStatus(html){ statusEl.innerHTML = html; }
-
-// Cell kinds:
-// "wall"   = impassable (borders or “format blocks”)
-// "open"   = passable
-// "locked" = impassable until gate unlock
-// text is optional label chunk
-function emptyGrid(){
-  return Array.from({length:ROWS}, ()=>Array.from({length:COLS}, ()=>({kind:"wall", text:"", tag:""})));
-}
-
-// Resume “regions” in natural reading order
-const REGIONS = [
-  {id:"HEADER", x:2, y:1, w:36, h:4, label:"HEADER"},
-  {id:"SUMMARY", x:2, y:6, w:36, h:3, label:"SUMMARY"},
-  {id:"SKILLS", x:2, y:10, w:36, h:3, label:"SKILLS"},
-  // Experience (largest/densest)
-  {id:"EXPERIENCE", x:2, y:14, w:36, h:9, label:"EXPERIENCE"},
-  {id:"PROJECTS", x:2, y:24, w:18, h:3, label:"PROJECTS"},
-  {id:"CERTS", x:22, y:24, w:16, h:3, label:"CERTIFICATIONS"},
-  {id:"EDUCATION", x:28, y:21, w:10, h:3, label:"EDUCATION"} // bottom-right-ish, gated
-];
-
-// Ordered gates: must traverse each gate corridor to unlock next
-const ORDER = ["SUMMARY","SKILLS","EXPERIENCE","PROJECTS","CERTS","EDUCATION"];
-let gateIndex = 0; // next required section to unlock/enter via gate corridor
-
-// Entry/exit “gate points” for each region corridor
-// We will generate a maze inside region and place a narrow gate corridor from previous region to next.
-const GATES = {
-  HEADER:   {entry:null, exit:{x:3,y:4}}, // start exits header down-left
-  SUMMARY:  {entry:{x:3,y:6}, exit:{x:37,y:8}},
-  SKILLS:   {entry:{x:37,y:10}, exit:{x:3,y:12}},
-  EXPERIENCE:{entry:{x:3,y:14}, exit:{x:37,y:22}},
-  PROJECTS: {entry:{x:3,y:24}, exit:{x:19,y:26}},
-  CERTS:    {entry:{x:22,y:24}, exit:{x:37,y:26}},
-  EDUCATION:{entry:{x:28,y:21}, exit:{x:37,y:23}} // “finish corridor”
-};
-
-// Packs: resume-like chunk labels (correct chunks vs overt errors)
-const PACKS = [
-  {
-    key:"A",
-    header: ["JORDAN","AVERY","DIGITAL","COMM","SPRINGFIELD","MA","EMAIL","PHONE"],
-    summaryGood: ["RESULTS","DRIVEN","SEO","ANALYTICS","STAKEHOLDER","COMMS"],
-    summaryBad: ["PASSIONATE","TEAM","PLAYER","GOOD","VIBES"],
-    skillsGood: ["GA4","CMS","A11Y","SEO","EXCEL","REPORT"],
-    skillsBad: ["SEO","SEO","SEO","SEO"],
-    expGood: ["OPTIMIZED","25+","PAGES","TRAFFIC","+18%","PYTHON","SAVED","2H/WK","QA","TEMPLATES","MEASURE","DASHBOARD"],
-    expBad: ["HARDWORK","AMAZING","NICE","RECENTLY"],
-    projectsGood: ["SITE","AUDIT","EDITORIAL","PLAN","STYLE","GUIDE"],
-    certsGood: ["GA4","CERT","HUBSPOT","CM"],
-    eduGood: ["BA","COMM","05/2023"]
-  },
-  {
-    key:"B",
-    header: ["JORDAN","AVERY","CONTENT","STRAT","CITY","STATE","EMAIL","LINKEDIN"],
-    summaryGood: ["CONTENT","STRAT","GA4","SEO","PROCESS","IMPROVE"],
-    summaryBad: ["FAST","LEARN","TRY","HARD"],
-    skillsGood: ["COPY","WRITE","CMS","A11Y","PM","ANALYTICS"],
-    skillsBad: ["KEYWORD","SPAM","SPAM"],
-    expGood: ["ENGAGE","+12%","CTR","+0.9","CALENDAR","TEMPLATES","QA","METRICS","REPORTS","TOOLS"],
-    expBad: ["GREAT","FUN","ENERGY"],
-    projectsGood: ["NEWSLTR","DASH","TRACK","TEST"],
-    certsGood: ["GA4","META","CERT"],
-    eduGood: ["BA","05/2023"]
-  },
-  {
-    key:"C",
-    header: ["JORDAN","AVERY","WRITING","DATA","TOOLS","EMAIL","PHONE"],
-    summaryGood: ["PROCESS","IMPROVE","ANALYTICS","SEO"],
-    summaryBad: ["BEST","AWESOME"],
-    skillsGood: ["PYTHON","EXCEL","GA4","SEO","A11Y"],
-    skillsBad: ["GENERIC","SKILLS"],
-    expGood: ["CLEAN","DATA","WEEKLY","REPORT","20%","FASTER","SAVED","TIME","DASH","QA"],
-    expBad: ["COOL","SUPER"],
-    projectsGood: ["AUTOMATE","PIPELINE","CHECKS"],
-    certsGood: ["GA4","CERT"],
-    eduGood: ["BA","COMM"]
+function unlockNext(){
+  stage++;
+  if(order[stage] === "education"){
+    educationSection.classList.remove("blocked");
   }
-];
+}
 
-// --- Build resume layout + embedded mazes ---
-function build(){
-  moves = 0;
-  visited.clear();
-  updateHUD();
+document.addEventListener("keydown", e=>{
+  const key = e.key;
+  let nextIndex = currentIndex;
 
-  const pack = PACKS[(round-1) % PACKS.length];
-  packPill.textContent = `Pack: ${pack.key}`;
+  if(key === "ArrowRight") nextIndex++;
+  if(key === "ArrowLeft") nextIndex--;
+  if(key === "ArrowDown") nextIndex += 4;
+  if(key === "ArrowUp") nextIndex -= 4;
 
-  cells = emptyGrid();
+  if(nextIndex >=0 && nextIndex < nodes.length){
+    currentIndex = nextIndex;
+    moves++;
+    update();
 
-  // carve region interiors as open (we’ll carve mazes inside them)
-  for(const r of REGIONS){
-    for(let y=r.y; y<r.y+r.h; y++){
-      for(let x=r.x; x<r.x+r.w; x++){
-        if(inBounds(x,y)) cells[y][x].kind = "wall"; // start as wall; carve later
-      }
+    const section = nodes[currentIndex].closest(".section")?.dataset.section;
+    if(section === order[stage]){
+      unlockNext();
     }
   }
+});
 
-  // Stamp “format error blocks” as large physical barriers inside SKILLS + EXPERIENCE
-  stampFormatBlocks(pack.key);
-
-  // Build mazes per region, with gating corridors.
-  // Education is locked until final gate unlock.
-  gateIndex = 0;
-  gatePill.textContent = `Gate: ${ORDER[gateIndex]}`;
-
-  // Header: open minimal corridor with start
-  carveHeader(pack);
-
-  // Summary -> Skills -> Experience -> Projects -> Certs mazes are generated immediately,
-  // but corridors into next section are "locked" until gate traversal completes.
-  carveRegionMaze("SUMMARY", pack, {good: pack.summaryGood, bad: pack.summaryBad}, {density:"low"});
-  carveRegionMaze("SKILLS", pack, {good: pack.skillsGood, bad: pack.skillsBad}, {density:"low"});
-  carveRegionMaze("EXPERIENCE", pack, {good: pack.expGood, bad: pack.expBad}, {density:"high"});
-  carveRegionMaze("PROJECTS", pack, {good: pack.projectsGood, bad: []}, {density:"low"});
-  carveRegionMaze("CERTS", pack, {good: pack.certsGood, bad: []}, {density:"low"});
-
-  // Education region carved but kept locked until all gates cleared
-  carveRegionMaze("EDUCATION", pack, {good: pack.eduGood, bad: []}, {density:"low"});
-  lockEducation(true);
-
-  // Place gating corridors between regions (narrow passage).
-  // Each corridor is present, but "entry cell" into next region is locked until prior gate traversed.
-  placeGateLocks();
-
-  // Start position in HEADER at Address
-  player = {x:3, y:2};
-  visited.add(key(player.x,player.y));
-
-  render();
-  scrollToPlayer();
-  setStatus(`<strong>Start:</strong> Navigate in natural reading order. Complete: Summary → Skills → Experience → Projects → Certifications → Education.`);
-}
-
-function regionById(id){ return REGIONS.find(r=>r.id===id); }
-
-function lockEducation(isLocked){
-  const r = regionById("EDUCATION");
-  for(let y=r.y; y<r.y+r.h; y++){
-    for(let x=r.x; x<r.x+r.w; x++){
-      if(!inBounds(x,y)) continue;
-      if(at(x,y).kind==="open" || at(x,y).kind==="locked"){
-        at(x,y).kind = isLocked ? "locked" : "open";
-      }
-    }
-  }
-  // Also lock/unlock the entry gate cell
-  const e = GATES.EDUCATION.entry;
-  if(e && inBounds(e.x,e.y)){
-    if(at(e.x,e.y).kind!=="wall"){
-      at(e.x,e.y).kind = isLocked ? "locked" : "open";
-    }
-  }
-}
-
-// Place locks at region entries to enforce ordered progression.
-// Only the next required region entry is open; all later entries are locked.
-function placeGateLocks(){
-  // Lock all region entries except the current gate target (and header start)
-  const required = new Set(ORDER);
-  for(const rid of ORDER){
-    const entry = GATES[rid]?.entry;
-    if(!entry) continue;
-    if(!inBounds(entry.x, entry.y)) continue;
-    // Entry becomes locked unless it's the currently required gate
-    at(entry.x, entry.y).kind = (rid === ORDER[gateIndex]) ? "open" : "locked";
-  }
-}
-
-function advanceGateIfEligible(){
-  const target = ORDER[gateIndex];
-  // We count “gate traversal” when player enters the target region via its entry coordinate
-  const entry = GATES[target]?.entry;
-  if(!entry) return;
-
-  if(player.x === entry.x && player.y === entry.y){
-    // Gate satisfied; unlock next gate
-    gateIndex = Math.min(gateIndex + 1, ORDER.length - 1);
-    gatePill.textContent = `Gate: ${ORDER[gateIndex]}`;
-
-    // If now the gate is EDUCATION and all prior are done, unlock education region
-    if(ORDER[gateIndex] === "EDUCATION"){
-      lockEducation(false);
-    }
-
-    placeGateLocks();
-    render();
-    beep(700, 40, 0.06);
-    setStatus(`<strong>Unlocked:</strong> Next target is <strong>${ORDER[gateIndex]}</strong>. Continue in reading order.`);
-  }
-}
-
-// Header carving + labels to look like a resume header block
-function carveHeader(pack){
-  const r = regionById("HEADER");
-
-  // Open most of header for navigation (still maze-ish)
-  for(let y=r.y; y<r.y+r.h; y++){
-    for(let x=r.x; x<r.x+r.w; x++){
-      if(!inBounds(x,y)) continue;
-      at(x,y).kind = "open";
-    }
-  }
-
-  // Put a few “walls” to keep movement non-trivial
-  for(let x=r.x+12; x<r.x+16; x++){
-    at(x, r.y+2).kind = "wall";
-  }
-
-  // Place realistic header tokens
-  placeTokensLine(r.x+1, r.y+1, ["JORDAN","AVERY"], 2);
-  placeTokensLine(r.x+1, r.y+2, ["DIGITAL","COMM","CONTENT","STRAT"], 1);
-  placeTokensLine(r.x+1, r.y+3, ["SPRINGFIELD","MA","EMAIL","PHONE","LINKEDIN"], 1);
-
-  // Start marker on Address cell (top-left-ish)
-  at(3,2).text = "ADDRESS";
-  at(3,2).tag = "START";
-}
-
-function placeTokensLine(x,y,tokens,step){
-  let xx=x;
-  for(const t of tokens){
-    if(inBounds(xx,y) && at(xx,y).kind !== "wall"){
-      at(xx,y).text = t;
-    }
-    xx += step;
-  }
-}
-
-// Stamp overt formatting “barriers” inside SKILLS + EXPERIENCE
-function stampFormatBlocks(packKey){
-  // physical barriers that students must route around (not just dead-end words)
-  // Coordinates chosen to sit inside regions naturally.
-  const blocks = [
-    // Skills: a two-column block (big obstacle)
-    {x: 26, y: 10, w: 10, h: 3, label: ["TWO","COL"]},
-    // Experience: script-font block (vertical barrier)
-    {x: 10, y: 15, w: 6, h: 6, label: ["SCRIPT","FONT"]},
-    // Experience: table block (wide barrier)
-    {x: 22, y: 18, w: 12, h: 4, label: ["TABLE"]},
-  ];
-
-  for(const b of blocks){
-    for(let yy=b.y; yy<b.y+b.h; yy++){
-      for(let xx=b.x; xx<b.x+b.w; xx++){
-        if(!inBounds(xx,yy)) continue;
-        at(xx,yy).kind = "wall";
-        at(xx,yy).text = "";
-        at(xx,yy).tag = "FORMAT";
-      }
-    }
-    // label inside the block to make the error overt
-    const toks = b.label.map(s=>s.toUpperCase());
-    for(let i=0;i<toks.length;i++){
-      const xx = b.x+1+i;
-      const yy = b.y+1;
-      if(inBounds(xx,yy)) at(xx,yy).text = toks[i];
-    }
-  }
-}
-
-// Carve a maze in a region with: multiple clean paths, but one shortest.
-// We do:
-// 1) build a perfect maze between entry/exit (unique path)
-// 2) add one cycle (alternate longer route) but keep shortest path unique
-// 3) sprinkle dead-end “bad content” branches (enterable, but dead ends)
-function carveRegionMaze(regionId, pack, lex, opts){
-  const r = regionById(regionId);
-  if(!r) return;
-
-  const entry = GATES[regionId]?.entry;
-  const exit = GATES[regionId]?.exit;
-
-  // Initialize region as walls EXCEPT pre-stamped format blocks (already walls)
-  for(let y=r.y; y<r.y+r.h; y++){
-    for(let x=r.x; x<r.x+r.w; x++){
-      if(!inBounds(x,y)) continue;
-      // Preserve existing walls (format blocks)
-      if(at(x,y).kind === "wall") continue;
-      at(x,y).kind = "wall";
-      at(x,y).text = "";
-      at(x,y).tag = "";
-    }
-  }
-
-  // Helper: region bounds check
-  const inRegion = (x,y)=> x>=r.x && x<r.x+r.w && y>=r.y && y<r.y+r.h;
-
-  // Pick odd-grid anchors for carving (to get maze texture)
-  // But our cell size is small; we carve on all cells with DFS while skipping format blocks.
-  const startCell = entry ? {...entry} : {x:r.x+1,y:r.y+1};
-  const goalCell  = exit ? {...exit}  : {x:r.x+r.w-2,y:r.y+r.h-2};
-
-  // Force entry/exit to be inside region bounds
-  if(entry && !inRegion(entry.x,entry.y)) return;
-  if(exit && !inRegion(exit.x,exit.y)) return;
-
-  // Carve a perfect maze in this region using DFS over cells, treating "wall" as unvisited.
-  // We'll carve "open" corridors.
-  const stack = [startCell];
-  at(startCell.x,startCell.y).kind = "open";
-
-  const dirs = [
-    {dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}
-  ];
-
-  function neighbors(x,y){
-    // random order
-    const shuffled = dirs.slice().sort(()=>Math.random()-0.5);
-    const out = [];
-    for(const d of shuffled){
-      const nx=x+d.dx, ny=y+d.dy;
-      if(!inRegion(nx,ny)) continue;
-      // cannot carve into format blocks
-      if(at(nx,ny).tag === "FORMAT") continue;
-      if(at(nx,ny).kind === "wall") out.push({x:nx,y:ny});
-    }
-    return out;
-  }
-
-  while(stack.length){
-    const cur = stack[stack.length-1];
-    const nbs = neighbors(cur.x,cur.y);
-    if(!nbs.length){
-      stack.pop();
-      continue;
-    }
-    const nxt = nbs[0];
-    // carve next
-    at(nxt.x,nxt.y).kind="open";
-    stack.push(nxt);
-  }
-
-  // Ensure goal reachable: open a direct corridor if not
-  if(!bfsDistance(startCell, goalCell, inRegion)){
-    carveDirect(startCell, goalCell, inRegion);
-  }
-
-  // Add exactly one “cycle” opening that creates an alternate route, but does NOT change shortest path uniqueness.
-  addOneCyclePreservingUniqueShortest(startCell, goalCell, inRegion);
-
-  // Add extra density in Experience: punch a few extra openings but keep shortest unique
-  if(opts.density === "high"){
-    for(let i=0;i<18;i++){
-      addOneExtraOpeningSafely(startCell, goalCell, inRegion);
-    }
-  }else{
-    for(let i=0;i<6;i++){
-      addOneExtraOpeningSafely(startCell, goalCell, inRegion);
-    }
-  }
-
-  // Place section label tokens to read like a resume (upper-left of region)
-  stampRegionLabel(r, regionId);
-
-  // Stamp content tokens: good tokens on “main corridors”, bad tokens in cul-de-sacs
-  placeResumeTokensInRegion(startCell, goalCell, inRegion, lex, opts);
-
-  // Force exit to be open
-  at(goalCell.x, goalCell.y).kind = "open";
-  at(goalCell.x, goalCell.y).text = (regionId==="EDUCATION") ? "EDUCATION" : (regionId==="CERTS" ? "CERTS" : "EXIT");
-}
-
-function stampRegionLabel(r, id){
-  // Put a label “badge” on the first open cell of region
-  for(let y=r.y; y<r.y+r.h; y++){
-    for(let x=r.x; x<r.x+r.w; x++){
-      if(at(x,y).kind==="open"){
-        at(x,y).tag = "SECLABEL:"+id;
-        return;
-      }
-    }
-  }
-}
-
-function bfsDistance(s, t, inRegion){
-  const q = [{x:s.x,y:s.y}];
-  const dist = new Map([[key(s.x,s.y), 0]]);
-  const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
-
-  while(q.length){
-    const p = q.shift();
-    const d0 = dist.get(key(p.x,p.y));
-    if(p.x===t.x && p.y===t.y) return d0;
-
-    for(const d of dirs){
-      const nx=p.x+d.dx, ny=p.y+d.dy;
-      if(!inBounds(nx,ny) || !inRegion(nx,ny)) continue;
-      if(at(nx,ny).kind!=="open") continue;
-      const k = key(nx,ny);
-      if(dist.has(k)) continue;
-      dist.set(k, d0+1);
-      q.push({x:nx,y:ny});
-    }
-  }
-  return null;
-}
-
-// Count number of shortest paths (dynamic programming layered BFS)
-function shortestPathCount(s, t, inRegion){
-  const q = [{x:s.x,y:s.y}];
-  const dist = new Map([[key(s.x,s.y), 0]]);
-  const count = new Map([[key(s.x,s.y), 1]]);
-  const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
-
-  while(q.length){
-    const p = q.shift();
-    const dk = dist.get(key(p.x,p.y));
-    for(const d of dirs){
-      const nx=p.x+d.dx, ny=p.y+d.dy;
-      if(!inBounds(nx,ny) || !inRegion(nx,ny)) continue;
-      if(at(nx,ny).kind!=="open") continue;
-      const nk = key(nx,ny);
-      if(!dist.has(nk)){
-        dist.set(nk, dk+1);
-        count.set(nk, count.get(key(p.x,p.y)));
-        q.push({x:nx,y:ny});
-      }else if(dist.get(nk) === dk+1){
-        count.set(nk, (count.get(nk) || 0) + (count.get(key(p.x,p.y)) || 0));
-      }
-    }
-  }
-  return {dist: dist.get(key(t.x,t.y)) ?? null, count: count.get(key(t.x,t.y)) ?? 0};
-}
-
-function carveDirect(s, t, inRegion){
-  let x=s.x, y=s.y;
-  while(x!==t.x){
-    x += (t.x>x?1:-1);
-    if(inRegion(x,y) && at(x,y).tag!=="FORMAT"){ at(x,y).kind="open"; }
-  }
-  while(y!==t.y){
-    y += (t.y>y?1:-1);
-    if(inRegion(x,y) && at(x,y).tag!=="FORMAT"){ at(x,y).kind="open"; }
-  }
-}
-
-function addOneCyclePreservingUniqueShortest(s,t,inRegion){
-  const base = shortestPathCount(s,t,inRegion);
-  if(base.dist === null) return;
-
-  // Try openings between adjacent cells currently walls to create a cycle,
-  // while keeping shortest distance same and shortest-path count = 1.
-  const candidates = [];
-  for(let y=0;y<ROWS;y++){
-    for(let x=0;x<COLS;x++){
-      if(!inRegion(x,y)) continue;
-      if(at(x,y).kind!=="wall") continue;
-      if(at(x,y).tag==="FORMAT") continue;
-
-      // opening wall here creates potential new route if it connects two open neighbors
-      let openNeighbors = 0;
-      for(const d of [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}]){
-        const nx=x+d.dx, ny=y+d.dy;
-        if(!inRegion(nx,ny)) continue;
-        if(at(nx,ny).kind==="open") openNeighbors++;
-      }
-      if(openNeighbors >= 2) candidates.push({x,y});
-    }
-  }
-
-  // Shuffle candidates and accept first that preserves unique shortest
-  for(const c of candidates.sort(()=>Math.random()-0.5)){
-    at(c.x,c.y).kind="open";
-    const after = shortestPathCount(s,t,inRegion);
-    const ok = after.dist === base.dist && after.count === 1;
-    if(ok) return;
-    // revert
-    at(c.x,c.y).kind="wall";
-  }
-}
-
-function addOneExtraOpeningSafely(s,t,inRegion){
-  const base = shortestPathCount(s,t,inRegion);
-  if(base.dist === null) return;
-
-  // Try opening a random wall cell; accept only if shortest distance unchanged AND shortest paths remain unique.
-  for(let tries=0; tries<40; tries++){
-    const x = Math.floor(Math.random()*COLS);
-    const y = Math.floor(Math.random()*ROWS);
-    if(!inRegion(x,y)) continue;
-    if(at(x,y).kind!=="wall") continue;
-    if(at(x,y).tag==="FORMAT") continue;
-
-    // prefer walls adjacent to open cells (adds detours)
-    let adjOpen = 0;
-    for(const d of [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}]){
-      const nx=x+d.dx, ny=y+d.dy;
-      if(!inRegion(nx,ny)) continue;
-      if(at(nx,ny).kind==="open") adjOpen++;
-    }
-    if(adjOpen === 0) continue;
-
-    at(x,y).kind="open";
-    const after = shortestPathCount(s,t,inRegion);
-    const ok = after.dist === base.dist && after.count === 1;
-    if(ok) return;
-    at(x,y).kind="wall";
-  }
-}
-
-// Place tokens so it “reads” like a resume:
-// - main shortest route gets “good” tokens
-// - side branches get “bad” tokens and/or vague/keyword cul-de-sacs
-function placeResumeTokensInRegion(s,t,inRegion, lex, opts){
-  // Collect open cells in region
-  const opens = [];
-  for(let y=0;y<ROWS;y++){
-    for(let x=0;x<COLS;x++){
-      if(inRegion(x,y) && at(x,y).kind==="open") opens.push({x,y});
-    }
-  }
-
-  // Get one shortest path (via parent pointers)
-  const path = shortestPathOne(s,t,inRegion);
-
-  // Token placement strategy:
-  // - Put “good” tokens along the path
-  // - Sprinkle neutral section-ish tokens elsewhere
-  // - Put “bad” tokens in dead ends (degree 1) to encourage traps
-  const good = (lex.good || []).slice();
-  const bad  = (lex.bad || []).slice();
-
-  // Mark degrees to find dead ends
-  const deg = new Map();
-  for(const p of opens){
-    let d=0;
-    for(const mv of [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}]){
-      const nx=p.x+mv.dx, ny=p.y+mv.dy;
-      if(!inBounds(nx,ny) || !inRegion(nx,ny)) continue;
-      if(at(nx,ny).kind==="open") d++;
-    }
-    deg.set(key(p.x,p.y), d);
-  }
-
-  // Clear texts except format labels already stamped
-  for(const p of opens){
-    // preserve SECTION label tags handled in render, not text
-    if(at(p.x,p.y).tag==="FORMAT") continue;
-    // keep any explicit region label we set earlier
-    if(at(p.x,p.y).tag.startsWith("SECLABEL:")) continue;
-    at(p.x,p.y).text = at(p.x,p.y).text || "";
-  }
-
-  // Place good tokens along the main path
-  let gi=0;
-  for(const p of path){
-    if(at(p.x,p.y).tag==="FORMAT") continue;
-    // don’t overwrite entry label tokens if already present
-    if(at(p.x,p.y).text && at(p.x,p.y).text.length>0) continue;
-
-    const tok = good.length ? good[gi % good.length] : "RESULTS";
-    at(p.x,p.y).text = tok;
-    gi++;
-  }
-
-  // Dead-end “bad” cul-de-sacs: fill the last 1–2 cells of each dead-end branch
-  const deadEnds = opens.filter(p => deg.get(key(p.x,p.y)) === 1);
-  // Keep dead ends out of the main path’s endpoints
-  const pathSet = new Set(path.map(p=>key(p.x,p.y)));
-  const cul = deadEnds.filter(p => !pathSet.has(key(p.x,p.y)));
-
-  let bi=0;
-  for(const p of cul.slice(0, Math.min(cul.length, opts.density==="high" ? 18 : 8))){
-    if(at(p.x,p.y).text) continue;
-    const tok = bad.length ? bad[bi % bad.length] : "VAGUE";
-    at(p.x,p.y).text = tok;
-    bi++;
-  }
-
-  // Neutral fill: light sprinkling so resume feels populated
-  const neutral = ["TOOLS","IMPACT","DATES","SCOPE","WORK","WRITE","EDIT","PLAN","TRACK","METRICS"];
-  for(const p of opens){
-    if(at(p.x,p.y).text) continue;
-    if(Math.random() < (opts.density==="high" ? 0.45 : 0.30)){
-      at(p.x,p.y).text = neutral[Math.floor(Math.random()*neutral.length)];
-    }
-  }
-
-  // Make a very overt “KEYWORD SPAM” detour in Experience: create a small corridor branch if possible
-  // (enterable; dead-end)
-  if(opts.density==="high"){
-    stampKeywordCuldesac(inRegion);
-    stampVagueCuldesac(inRegion);
-  }
-}
-
-function shortestPathOne(s,t,inRegion){
-  const q = [{x:s.x,y:s.y}];
-  const prev = new Map();
-  const seen = new Set([key(s.x,s.y)]);
-  const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
-
-  while(q.length){
-    const p=q.shift();
-    if(p.x===t.x && p.y===t.y) break;
-    for(const d of dirs){
-      const nx=p.x+d.dx, ny=p.y+d.dy;
-      if(!inBounds(nx,ny) || !inRegion(nx,ny)) continue;
-      if(at(nx,ny).kind!=="open") continue;
-      const nk = key(nx,ny);
-      if(seen.has(nk)) continue;
-      seen.add(nk);
-      prev.set(nk, key(p.x,p.y));
-      q.push({x:nx,y:ny});
-    }
-  }
-
-  const path = [];
-  let cur = key(t.x,t.y);
-  if(cur !== key(s.x,s.y) && !prev.has(cur)) return [s];
-  path.push({x:t.x,y:t.y});
-  while(cur !== key(s.x,s.y)){
-    const p = prev.get(cur);
-    if(!p) break;
-    const [px,py] = p.split(",").map(Number);
-    path.push({x:px,y:py});
-    cur = p;
-  }
-  path.reverse();
-  return path;
-}
-
-function stampKeywordCuldesac(inRegion){
-  // Try to find an open cell with one open neighbor to extend into a dead-end labeled “SEO SEO SEO”
-  // (overt keyword stuffing)
-  for(let tries=0; tries<200; tries++){
-    const x = 2 + Math.floor(Math.random()*(COLS-4));
-    const y = 14 + Math.floor(Math.random()*(9)); // roughly inside experience vertical span
-    if(!inBounds(x,y) || !inRegion(x,y)) continue;
-    if(at(x,y).kind!=="open") continue;
-
-    const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
-    // choose a wall direction to carve 2 cells out
-    for(const d of dirs.sort(()=>Math.random()-0.5)){
-      const a = {x:x+d.dx, y:y+d.dy};
-      const b = {x:x+2*d.dx, y:y+2*d.dy};
-      if(!inBounds(a.x,a.y) || !inBounds(b.x,b.y)) continue;
-      if(!inRegion(a.x,a.y) || !inRegion(b.x,b.y)) continue;
-      if(at(a.x,a.y).kind==="wall" && at(b.x,b.y).kind==="wall" && at(a.x,a.y).tag!=="FORMAT" && at(b.x,b.y).tag!=="FORMAT"){
-        at(a.x,a.y).kind="open";
-        at(b.x,b.y).kind="open";
-        at(a.x,a.y).text="SEO";
-        at(b.x,b.y).text="SEO";
-        return;
-      }
-    }
-  }
-}
-
-function stampVagueCuldesac(inRegion){
-  // Another dead-end: vague claims (overtly low-signal)
-  for(let tries=0; tries<200; tries++){
-    const x = 6 + Math.floor(Math.random()*(COLS-12));
-    const y = 15 + Math.floor(Math.random()*(7));
-    if(!inBounds(x,y) || !inRegion(x,y)) continue;
-    if(at(x,y).kind!=="open") continue;
-
-    const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
-    for(const d of dirs.sort(()=>Math.random()-0.5)){
-      const a = {x:x+d.dx, y:y+d.dy};
-      if(!inBounds(a.x,a.y) || !inRegion(a.x,a.y)) continue;
-      if(at(a.x,a.y).kind==="wall" && at(a.x,a.y).tag!=="FORMAT"){
-        at(a.x,a.y).kind="open";
-        at(a.x,a.y).text="VAGUE";
-        return;
-      }
-    }
-  }
-}
-
-// Render: subtle micro-boxes + resume-like section labels
-function render(){
-  gridEl.style.gridTemplateColumns = `repeat(${COLS}, 36px)`;
-  gridEl.innerHTML = "";
-
-  for(let y=0;y<ROWS;y++){
-    for(let x=0;x<COLS;x++){
-      const c = at(x,y);
-      const d = document.createElement("div");
-      d.className = "cell";
-
-      if(c.kind==="wall") d.classList.add("wall");
-      if(c.kind==="locked") d.classList.add("locked");
-
-      const k = key(x,y);
-      if(visited.has(k)) d.classList.add("visited");
-      if(player.x===x && player.y===y) d.classList.add("current");
-
-      // text
-      d.textContent = (c.kind==="open" || c.kind==="locked") ? (c.text || "") : (c.text || "");
-
-      // Start/Finish badges on exact cells
-      if(c.tag==="START"){
-        const b=document.createElement("div");
-        b.className="badge";
-        b.textContent="START";
-        d.appendChild(b);
-      }
-      // Finish: use EDUCATION exit cell
-      const eduExit = GATES.EDUCATION.exit;
-      if(x===eduExit.x && y===eduExit.y){
-        const b=document.createElement("div");
-        b.className="badge";
-        b.textContent="FINISH";
-        d.appendChild(b);
-      }
-
-      // Section label: attach a small label to the first open cell of each region (tagged earlier)
-      if(c.tag && c.tag.startsWith("SECLABEL:")){
-        const sec = c.tag.split(":")[1];
-        const lab=document.createElement("div");
-        lab.className="secLabel";
-        lab.textContent = sec;
-        d.appendChild(lab);
-      }
-
-      gridEl.appendChild(d);
-    }
-  }
-}
-
-function scrollToPlayer(){
-  const idx = player.y * COLS + player.x;
-  const el = gridEl.children[idx];
-  if(el) el.scrollIntoView({block:"center", inline:"center"});
-}
-
-function isPassable(kind){
-  return kind==="open"; // locked is not passable
-}
-
-function tryMove(dx,dy){
-  const nx = player.x + dx;
-  const ny = player.y + dy;
-  if(!inBounds(nx,ny)){
-    beep(180, 35, 0.05);
-    return;
-  }
-
-  const dest = at(nx,ny);
-  if(!isPassable(dest.kind)){
-    beep(160, 45, 0.06);
-    return;
-  }
-
-  player = {x:nx,y:ny};
-  moves++;
-  updateHUD();
-  visited.add(key(nx,ny));
-
-  beep(520, 30, 0.05);
-
-  // Gate progression check
-  advanceGateIfEligible();
-
-  render();
-  scrollToPlayer();
-
-  // Completion check: reaching EDUCATION exit (finish)
-  const fin = GATES.EDUCATION.exit;
-  if(player.x===fin.x && player.y===fin.y){
-    setStatus(`✅ Completed in <strong>${moves}</strong> moves. Click <strong>New Round</strong> to generate a new embedded resume maze.`);
-    beep(820, 60, 0.06);
-  }
-}
-
-// Keyboard: arrow keys only
-window.addEventListener("keydown", (e) => {
-  const k = e.key;
-  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(k)){
-    e.preventDefault();
-    if(k==="ArrowUp") tryMove(0,-1);
-    if(k==="ArrowDown") tryMove(0,1);
-    if(k==="ArrowLeft") tryMove(-1,0);
-    if(k==="ArrowRight") tryMove(1,0);
-  }
-}, {passive:false});
-
-function newRound(){
-  round++;
-  updateHUD();
-  build();
-}
-function restart(){
-  moves = 0;
-  visited.clear();
-  updateHUD();
-  // Restart at header address
-  player = {x:3,y:2};
-  visited.add(key(player.x,player.y));
-  gateIndex = 0;
-  gatePill.textContent = `Gate: ${ORDER[gateIndex]}`;
-  // Re-lock education for restart
-  lockEducation(true);
-  placeGateLocks();
-  render();
-  scrollToPlayer();
-  setStatus(`<strong>Restarted.</strong> Follow the ordered reading path: Summary → Skills → Experience → Projects → Certifications → Education.`);
-}
-
-// Init
-updateHUD();
-build();
+update();
 </script>
+
 </body>
 </html>
