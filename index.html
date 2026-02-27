@@ -3,227 +3,273 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze</title>
+<title>ATS Resume Maze — Prototype A</title>
 
 <style>
+:root{
+  --bg:#f3f3f3;
+  --paper:#fff;
+  --ink:#111;
+  --ui:#ddd;
+  --yellow:#ffe86a;
+  --red:#ff8a8a;
+}
+
 body{
   margin:0;
-  background:#f3f3f3;
-  font-family: Georgia, serif;
+  background:var(--bg);
+  font-family: Georgia, "Times New Roman", serif;
+  color:var(--ink);
 }
 
 .rail{
   position:fixed;
   left:0; top:0;
-  width:280px;
+  width:300px;
   height:100vh;
   background:#fff;
-  border-right:1px solid #ddd;
-  padding:15px;
+  border-right:1px solid var(--ui);
+  padding:14px;
   overflow:auto;
 }
 
+.rail h2{ margin:0 0 10px; font-size:16px; }
+
 .page{
-  margin-left:280px;
-  padding:30px;
+  margin-left:300px;
+  padding:30px 20px;
 }
 
 .resume{
-  background:#fff;
-  padding:40px 60px;
   max-width:900px;
-  margin:auto;
-  box-shadow:0 2px 10px rgba(0,0,0,.08);
+  margin:0 auto;
+  background:#fff;
+  padding:50px 70px;
+  box-shadow:0 2px 14px rgba(0,0,0,.08);
 }
 
-.section{
-  margin-top:30px;
-}
+.section{ margin-top:28px; }
 
 .section-title{
   font-weight:bold;
   border-bottom:1px solid #000;
-  margin-bottom:10px;
   padding-bottom:4px;
+  margin-bottom:10px;
 }
 
 .node{
   display:inline-block;
-  padding:2px 4px;
+  padding:2px 3px;
+  border-radius:2px;
   cursor:pointer;
-  border-radius:3px;
 }
 
-.active{ background:#ffe86a; }
-.visited{ background:#ffe86a; opacity:.9; }
-.trap{ background:#ff8a8a; }
-.neighbor{ outline:1px solid #6aa9ff; }
+.active{ background:var(--yellow); }
+.visited{ background:var(--yellow); opacity:.9; }
+.bad{ background:var(--red); }
 
-button{
-  margin-top:10px;
-  padding:6px 10px;
-}
+ul{ margin-left:22px; }
 </style>
 </head>
 <body>
 
 <div class="rail">
-  <h3>ATS Resume Maze</h3>
-  <p>Move in order:</p>
-  <p>SUMMARY → SKILLS → EXPERIENCE → EDUCATION</p>
-  <p id="stats">Moves: 0 | Traps: 0 | Score: 100</p>
+  <h2>ATS Resume Maze</h2>
+  <p>
+    Click adjacent words to move.<br><br>
+    Order:<br>
+    SUMMARY → SKILLS → EXPERIENCE → EDUCATION
+  </p>
+  <p id="stats">Moves: 0 | ATS Hits: 0 | Score: 100</p>
   <div id="report"></div>
-  <button onclick="resetGame()">New Round</button>
+  <button onclick="reset()">New Round</button>
 </div>
 
 <div class="page">
-<div class="resume" id="resume"></div>
+<div class="resume">
+
+<div class="section">
+  <div class="section-title">HEADER</div>
+  <p id="header"></p>
+</div>
+
+<div class="section">
+  <div class="section-title">SUMMARY</div>
+  <p id="summary"></p>
+</div>
+
+<div class="section">
+  <div class="section-title">SKILLS</div>
+  <p id="skills"></p>
+</div>
+
+<div class="section">
+  <div class="section-title">PROFESSIONAL EXPERIENCE</div>
+  <p id="experience"></p>
+</div>
+
+<div class="section">
+  <div class="section-title">EDUCATION</div>
+  <p id="education"></p>
+</div>
+
+</div>
 </div>
 
 <script>
 let nodes = [];
-let edges = {};
+let edges = new Map();
 let current = null;
 let moves = 0;
-let traps = 0;
-let stage = 0;
-let order = ["summary","skills","experience","education"];
+let hits = 0;
+let stageOrder = ["summary","skills","experience","education"];
+let stageIndex = 0;
 
-/* ---------------------------
-   BUILD RESUME
---------------------------- */
+/* ---------- GRAPH ENGINE ---------- */
 
-function buildResume(){
-  nodes = [];
-  edges = {};
-  current = null;
-  moves = 0;
-  traps = 0;
-  stage = 0;
-
-  const resume = document.getElementById("resume");
-  resume.innerHTML = "";
-
-  createSection("SUMMARY","summary",["Data-driven","analytics","professional"]);
-  createSection("SKILLS","skills",["GA4","SEO","Skill-Bars"]);
-  createExperience();
-  createSection("EDUCATION","education",["B.A."]);
-
-  updateStats();
+function addNode(el, section, trap=false){
+  const id = nodes.length;
+  el.dataset.id = id;
+  nodes.push({id, section, trap});
+  el.addEventListener("click",()=>handleClick(id));
+  return id;
 }
 
-function createSection(title,key,words){
-  const div = document.createElement("div");
-  div.className = "section";
-
-  const h = document.createElement("div");
-  h.className = "section-title";
-  h.textContent = title;
-  div.appendChild(h);
-
-  words.forEach(word=>{
-    let span = createNode(word,key,word==="Skill-Bars");
-    div.appendChild(span);
-  });
-
-  document.getElementById("resume").appendChild(div);
+function connect(a,b){
+  if(!edges.has(a)) edges.set(a,new Set());
+  if(!edges.has(b)) edges.set(b,new Set());
+  edges.get(a).add(b);
+  edges.get(b).add(a);
 }
-
-function createExperience(){
-  const div = document.createElement("div");
-  div.className = "section";
-
-  const h = document.createElement("div");
-  h.className = "section-title";
-  h.textContent = "EXPERIENCE";
-  div.appendChild(h);
-
-  for(let i=0;i<20;i++){
-    let word = Math.random()<0.2 ? "TABLE" : "optimized";
-    let trap = word==="TABLE";
-    div.appendChild(createNode(word,"experience",trap));
-  }
-
-  document.getElementById("resume").appendChild(div);
-}
-
-function createNode(text,section,isTrap=false){
-  const span = document.createElement("span");
-  span.className = "node";
-  span.textContent = text + " ";
-  span.dataset.section = section;
-  span.dataset.id = nodes.length;
-
-  nodes.push(span);
-  edges[nodes.length-1] = [];
-
-  span.addEventListener("click",()=>handleClick(nodes.length-1));
-  return span;
-}
-
-/* ---------------------------
-   GAME LOGIC
---------------------------- */
 
 function handleClick(id){
-  if(current === null){
+  if(current===null){
     activate(id);
-    highlightNeighbors(id);
     return;
   }
-
-  if(Math.abs(id-current) === 1){
-    move(id);
+  if(edges.get(current)?.has(id)){
+    moveTo(id);
   }
 }
 
-function move(id){
+function moveTo(id){
   moves++;
   activate(id);
 
-  if(nodes[id].textContent.includes("TABLE") || 
-     nodes[id].textContent.includes("Skill-Bars")){
-    nodes[id].classList.add("trap");
-    traps++;
+  if(nodes[id].trap){
+    document.querySelector(`[data-id="${id}"]`).classList.add("bad");
+    hits++;
   }
 
-  if(nodes[id].dataset.section === order[stage]){
-    stage++;
+  if(nodes[id].section===stageOrder[stageIndex]){
+    stageIndex++;
   }
 
   updateStats();
-  highlightNeighbors(id);
-
-  if(stage === order.length){
-    document.getElementById("report").innerHTML =
-      "<h4>Resume Parsed</h4><p>Structural clarity achieved.</p>";
-  }
+  checkComplete();
 }
 
 function activate(id){
-  nodes.forEach(n=>n.classList.remove("active"));
-  nodes[id].classList.add("active","visited");
-  current = id;
-}
-
-function highlightNeighbors(id){
-  nodes.forEach(n=>n.classList.remove("neighbor"));
-  if(id>0) nodes[id-1].classList.add("neighbor");
-  if(id<nodes.length-1) nodes[id+1].classList.add("neighbor");
+  document.querySelectorAll(".active").forEach(e=>e.classList.remove("active"));
+  const el=document.querySelector(`[data-id="${id}"]`);
+  el.classList.add("active","visited");
+  current=id;
 }
 
 function updateStats(){
-  let score = Math.max(0,100 - traps*15 - Math.floor(moves/5));
-  document.getElementById("stats").textContent =
-    `Moves: ${moves} | Traps: ${traps} | Score: ${score}`;
+  let score=Math.max(0,100 - hits*10 - Math.floor(moves/4));
+  document.getElementById("stats").textContent=
+    `Moves: ${moves} | ATS Hits: ${hits} | Score: ${score}`;
 }
 
-function resetGame(){
+function checkComplete(){
+  if(nodes[current].section==="education"){
+    document.getElementById("report").innerHTML=
+      `<h3>Resume Analysis</h3>
+       <p>Completed in ${moves} moves.</p>
+       <p>ATS traps triggered: ${hits}.</p>`;
+  }
+}
+
+/* ---------- BUILD STRUCTURE ---------- */
+
+function build(){
+  nodes=[]; edges.clear();
+  moves=0; hits=0; stageIndex=0; current=null;
   document.getElementById("report").innerHTML="";
-  buildResume();
+
+  /* HEADER */
+  const header=document.getElementById("header");
+  header.innerHTML="";
+  let first = header.appendChild(span("FIRST"));
+  let last  = header.appendChild(span("LAST"));
+  let idFirst = addNode(first,"header");
+  let idLast  = addNode(last,"header");
+  connect(idFirst,idLast);
+
+  /* SUMMARY */
+  const summary=document.getElementById("summary");
+  summary.innerHTML="";
+  let s1 = summary.appendChild(span("Data-driven"));
+  let s2 = summary.appendChild(span("analytics"));
+  let s3 = summary.appendChild(span("professional"));
+  let idS1 = addNode(s1,"summary");
+  let idS2 = addNode(s2,"summary");
+  let idS3 = addNode(s3,"summary");
+
+  connect(idLast,idS1);
+  connect(idS1,idS2);
+  connect(idS2,idS3);
+
+  /* SKILLS */
+  const skills=document.getElementById("skills");
+  skills.innerHTML="";
+  let ga4 = skills.appendChild(span("GA4"));
+  let seo = skills.appendChild(span("SEO"));
+  let bars = skills.appendChild(span("Skill-Bars"));
+  let idGA4 = addNode(ga4,"skills");
+  let idSEO = addNode(seo,"skills");
+  let idBars = addNode(bars,"skills",true);
+
+  connect(idS3,idGA4);
+  connect(idGA4,idSEO);
+  connect(idSEO,idBars);
+
+  /* EXPERIENCE */
+  const exp=document.getElementById("experience");
+  exp.innerHTML="";
+  let opt = exp.appendChild(span("Optimized"));
+  let camp = exp.appendChild(span("campaigns"));
+  let table = exp.appendChild(span("TABLE"));
+  let idOpt = addNode(opt,"experience");
+  let idCamp = addNode(camp,"experience");
+  let idTable = addNode(table,"experience",true);
+
+  connect(idSEO,idOpt);
+  connect(idOpt,idCamp);
+  connect(idCamp,idTable);
+
+  /* EDUCATION */
+  const edu=document.getElementById("education");
+  edu.innerHTML="";
+  let ba = edu.appendChild(span("B.A."));
+  let idBA = addNode(ba,"education");
+
+  connect(idCamp,idBA);
+
+  updateStats();
 }
 
-buildResume();
+function span(text){
+  let s=document.createElement("span");
+  s.className="node";
+  s.textContent=text+" ";
+  return s;
+}
+
+function reset(){ build(); }
+
+build();
 </script>
 
 </body>
