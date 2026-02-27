@@ -1,1215 +1,418 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze — Prose + True Maze</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATS Resume Maze</title>
 
 <style>
-  :root{
-    --bg:#f2f2f2;
-    --paper:#fff;
-    --ink:#111;
-    --muted:#444;
-    --rule:#000;
-    --uiRule:#d0d0d0;
-    --yellow:#ffe86a;
-    --red:#ff8a8a;
-  }
+:root{
+  --bg:#f3f3f3;
+  --paper:#ffffff;
+  --ink:#111;
+  --muted:#444;
+  --yellow:#ffe86a;
+  --red:#ff8a8a;
+  --rule:#000;
+  --ui:#ddd;
+}
 
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--ink);
-    font-family: Georgia, "Times New Roman", serif;
-  }
+body{
+  margin:0;
+  background:var(--bg);
+  font-family: Georgia, "Times New Roman", serif;
+  color:var(--ink);
+}
 
-  /* LEFT VERTICAL BAR */
-  .rail{
-    position:fixed;
-    left:0; top:0;
-    height:100vh;
-    width:320px;
-    background:#fff;
-    border-right:1px solid var(--uiRule);
-    box-shadow: 2px 0 10px rgba(0,0,0,.06);
-    padding:14px 14px 12px;
-    overflow:auto;
-    z-index:50;
-  }
-  .rail h1{
-    margin:0 0 10px;
-    font-size:15px;
-    letter-spacing:.2px;
-  }
-  .rail .small{
-    font-size:13px;
-    line-height:1.35;
-    color:var(--muted);
-  }
-  .rail .row{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    margin:10px 0;
-  }
-  .rail button{
-    border:1px solid var(--uiRule);
-    background:#fff;
-    color:var(--ink);
-    border-radius:10px;
-    padding:8px 10px;
-    cursor:pointer;
-    font-size:13px;
-  }
-  .pill{
-    border:1px solid #ddd;
-    border-radius:999px;
-    padding:6px 10px;
-    background:#fff;
-    color:var(--muted);
-    font-size:13px;
-  }
-  .rail .box{
-    border-top:1px solid #eee;
-    padding-top:10px;
-    margin-top:10px;
-  }
-  .rail .box strong{ color:var(--ink); }
-  .rail ul{
-    margin:8px 0 0 18px;
-    padding:0;
-  }
+/* LEFT RAIL */
+.rail{
+  position:fixed;
+  left:0; top:0;
+  width:300px;
+  height:100vh;
+  background:#fff;
+  border-right:1px solid var(--ui);
+  padding:14px;
+  overflow:auto;
+}
+.rail h2{ margin:0 0 10px; font-size:16px; }
+.rail button{
+  margin:4px 4px 4px 0;
+  padding:6px 10px;
+  border:1px solid var(--ui);
+  background:#fff;
+  border-radius:8px;
+  cursor:pointer;
+}
+.pill{
+  display:inline-block;
+  border:1px solid var(--ui);
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:13px;
+  margin:4px 4px 0 0;
+}
 
-  /* MAIN PAPER */
-  .page{
-    margin-left: 320px;
-    padding: 30px 16px 60px;
-  }
-  .resume{
-    max-width: 980px;
-    margin: 0 auto;
-    background:var(--paper);
-    padding: 50px 70px;
-    box-shadow: 0 2px 14px rgba(0,0,0,.08);
-  }
+.page{
+  margin-left:300px;
+  padding:30px 20px 80px;
+}
 
-  /* Resume header */
-  .header{
-    text-align:center;
-  }
-  .name{
-    font-weight:700;
-    font-size:28px;
-    letter-spacing:.4px;
-  }
-  .contact{
-    margin-top:6px;
-    font-size:14px;
-  }
+.resume{
+  max-width:960px;
+  margin:0 auto;
+  background:var(--paper);
+  padding:50px 70px;
+  box-shadow:0 2px 14px rgba(0,0,0,.08);
+}
 
-  /* Headshot block (ATS trap) */
-  .headshotWrap{
-    width:96px; height:96px;
-    border-radius:50%;
-    overflow:hidden;
-    border:1px solid var(--ink);
-    margin: 10px auto 4px;
-  }
-  .headshot{
-    width:100%; height:100%;
-    object-fit:cover;
-    display:block;
-  }
-  .headshotLabel{
-    font-size:12px;
-    color:var(--muted);
-    margin-top:6px;
-  }
+.header{ text-align:center; }
+.name{ font-size:28px; font-weight:700; }
+.contact{ margin-top:6px; font-size:14px; }
 
-  /* Sections */
-  .section{ margin-top:26px; }
-  .section-title{
-    font-weight:700;
-    letter-spacing:.5px;
-    border-bottom:1px solid var(--rule);
-    padding-bottom:4px;
-    margin-bottom:10px;
-  }
-  .rowline{
-    display:flex;
-    justify-content:space-between;
-    gap:16px;
-  }
-  ul{ margin: 6px 0 12px 22px; }
-  li{ margin: 4px 0; }
+.section{ margin-top:26px; }
+.section-title{
+  font-weight:700;
+  border-bottom:1px solid var(--rule);
+  padding-bottom:4px;
+  margin-bottom:10px;
+}
 
-  /* Nodes */
-  .node{
-    display:inline-block;
-    padding:1px 2px;
-    border-radius:2px;
-    user-select:none;
-    cursor:default;
-  }
-  .node::after{ content:" "; } /* keeps prose spacing */
-  .node.noSpace::after{ content:""; } /* for punctuation spans if needed */
+.node{
+  display:inline-block;
+  padding:1px 2px;
+  border-radius:2px;
+  user-select:none;
+}
+.node::after{ content:" "; }
 
-  .active{ background: var(--yellow); }
-  .visited{ background: var(--yellow); opacity:.92; }
-  .badHit{ background: var(--red); }
+.active{ background:var(--yellow); }
+.visited{ background:var(--yellow); opacity:.9; }
+.bad{ background:var(--red); }
 
-  /* Trap hints (visible in normal mode; hidden in hard mode) */
-  .trapHint{ font-style:italic; color:#666; }
-  .scriptHint{ font-family:cursive; }
-  .twocolHint{ column-count:2; column-gap:24px; }
-  .tableHint{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:6px;
-    border:1px solid #bbb;
-    padding:8px;
-    margin:6px 0;
-  }
+.headshotWrap{
+  width:96px;height:96px;
+  border-radius:50%;
+  overflow:hidden;
+  border:1px solid #000;
+  margin:10px auto;
+}
+.headshot{ width:100%;height:100%;object-fit:cover; }
 
-  body.hard .trapHint,
-  body.hard .scriptHint{
-    font-style:normal;
-    color:var(--ink);
-    font-family: Georgia, "Times New Roman", serif;
-  }
-  body.hard .twocolHint{ column-count:1; }
-  body.hard .tableHint{ border-color:#e2e2e2; }
+ul{ margin-left:22px; }
+li{ margin:4px 0; }
 
-  /* Experience “maze area” should look like standard resume text */
-  .expWrap{
-    border:1px solid #ddd;
-    border-radius:10px;
-    padding:12px 14px;
-  }
-  .company{
-    margin-top:10px;
-  }
-  .company .coLine{
-    display:flex;
-    justify-content:space-between;
-    gap:16px;
-    font-weight:700;
-  }
-  .company .role{
-    font-weight:700;
-    margin:2px 0 6px;
-  }
-  .company .meta{
-    font-weight:400;
-    color:var(--muted);
-    font-size:13px;
-    margin-left:6px;
-  }
+.expWrap{
+  border:1px solid #ddd;
+  padding:12px 14px;
+  border-radius:10px;
+}
 
-  /* Small note (optional) */
-  .note{
-    margin-top:10px;
-    font-size:12px;
-    color:var(--muted);
-  }
+/* no italics or stylistic giveaway */
+.trap{ color:inherit; font-style:normal; }
+
 </style>
 </head>
-
 <body>
 
-<!-- LEFT RAIL -->
-<aside class="rail" id="rail">
-  <h1>ATS Resume Maze</h1>
-
-  <div class="small">
-    <strong>Goal:</strong> Navigate in order:
-    <br/>
-    SUMMARY → SKILLS → EXPERIENCE (maze) → PROJECTS → CERTIFICATIONS → EDUCATION
-    <br/>
-    <strong>Controls:</strong> Arrow keys only.
-    <br/>
-    <strong>Feedback:</strong> Your path stays <span style="background:var(--yellow);padding:1px 6px;border-radius:4px;">yellow</span>.
-    ATS violations turn <span style="background:var(--red);padding:1px 6px;border-radius:4px;">red</span>.
+<div class="rail">
+  <h2>ATS Resume Maze</h2>
+  <div>
+    Navigate:
+    SUMMARY → SKILLS → EXPERIENCE → PROJECTS → CERTIFICATIONS → EDUCATION
+  </div>
+  <div style="margin-top:8px;">
+    Arrow keys only.
   </div>
 
-  <div class="row">
-    <button id="btnNew" type="button">New Round</button>
-    <button id="btnRestart" type="button">Restart</button>
-    <button id="btnHard" type="button">Hard Mode: Off</button>
+  <div style="margin-top:12px;">
+    <button onclick="resetGame()">Restart</button>
   </div>
 
-  <div class="row">
-    <span class="pill" id="pillMoves">Moves: 0</span>
-    <span class="pill" id="pillHits">ATS Hits: 0</span>
-    <span class="pill" id="pillScore">Score: 100</span>
+  <div style="margin-top:10px;">
+    <span class="pill" id="moves">Moves: 0</span>
+    <span class="pill" id="hits">ATS Hits: 0</span>
+    <span class="pill" id="score">Score: 100</span>
   </div>
 
-  <div class="box" id="boxObjective">
-    <strong>Current objective</strong>
-    <div class="small" id="objectiveText" style="margin-top:6px;">Reach: SUMMARY</div>
+  <div style="margin-top:14px;">
+    <strong>Current:</strong>
+    <div id="objective">SUMMARY</div>
   </div>
 
-  <div class="box" id="boxInstructions">
-    <strong>How to play</strong>
-    <ul class="small">
-      <li>Start at the address/name line.</li>
-      <li>Advance through sections in order.</li>
-      <li>In EXPERIENCE, you are in a true maze: some word-chunks are dead ends.</li>
-      <li>Clicking or entering a non-ATS element marks it red and costs points.</li>
-    </ul>
+  <div id="report" style="margin-top:16px;"></div>
+</div>
+
+<div class="page">
+<div class="resume">
+
+<div class="header">
+  <div class="name">
+    <span class="node doc" id="start">FIRST</span>
+    <span class="node doc">LAST</span>
   </div>
 
-  <div class="box" id="boxReport" style="display:none;"></div>
-</aside>
-
-<!-- MAIN PAGE -->
-<main class="page">
-  <div class="resume" id="resume">
-
-    <div class="header">
-      <div class="name">
-        <span class="node doc" data-id="start" data-kind="good">FIRST</span>
-        <span class="node doc" data-id="lname" data-kind="good">LAST</span>
-      </div>
-
-      <div class="contact">
-        <span class="node doc" data-kind="good">New</span>
-        <span class="node doc" data-kind="good">York</span>
-        <span class="node doc" data-kind="good">City,</span>
-        <span class="node doc" data-kind="good">NY</span>
-        <span class="node doc noSpace" data-kind="good">•</span>
-        <span class="node doc" data-kind="good">first.last@email.com</span>
-        <span class="node doc noSpace" data-kind="good">•</span>
-        <span class="node doc" data-kind="good">(212)</span>
-        <span class="node doc" data-kind="good">123-4567</span>
-        <span class="node doc noSpace" data-kind="good">•</span>
-        <span class="node doc" data-kind="good">linkedin.com/in/username</span>
-      </div>
-
-      <!-- HEADSHOT TRAP immediately after start -->
-      <div class="headshotWrap">
-        <img class="headshot node doc trapHint" id="headshot"
-             data-id="headshot" data-kind="trap" data-trap="photo"
-             src="https://i.pravatar.cc/240?img=32" alt="Candidate headshot"/>
-      </div>
-      <div class="headshotLabel">
-        <span class="node doc trapHint" data-id="photoLabel" data-kind="trap" data-trap="photo">Headshot</span>
-        <span class="node doc trapHint" data-kind="trap" data-trap="photo">(ATS risk)</span>
-      </div>
-    </div>
-
-    <section class="section" data-section="summary" id="sec-summary">
-      <div class="section-title">SUMMARY</div>
-      <p>
-        <span class="node doc" data-kind="good">Data-driven</span>
-        <span class="node doc" data-kind="good">communications</span>
-        <span class="node doc" data-kind="good">and</span>
-        <span class="node doc" data-kind="good">analytics</span>
-        <span class="node doc" data-kind="good">professional</span>
-        <span class="node doc" data-kind="good">with</span>
-        <span class="node doc" data-kind="good">quantified</span>
-        <span class="node doc" data-kind="good">impact</span>
-        <span class="node doc noSpace" data-kind="good">.</span>
-        <span class="node doc trapHint" data-kind="trap" data-trap="vague">hard-working</span>
-        <span class="node doc trapHint" data-kind="trap" data-trap="vague">team-player</span>
-      </p>
-    </section>
-
-    <section class="section" data-section="skills" id="sec-skills">
-      <div class="section-title">SKILLS</div>
-
-      <!-- Visible formatting trap block -->
-      <div class="twocolHint scriptHint trapHint" style="margin-bottom:8px;">
-        <span class="node doc trapHint" data-kind="trap" data-trap="format">Skill</span>
-        <span class="node doc trapHint" data-kind="trap" data-trap="format">Bars</span>
-        <span class="node doc trapHint" data-kind="trap" data-trap="format">★</span>
-        <span class="node doc trapHint" data-kind="trap" data-trap="format">★</span>
-        <span class="node doc trapHint" data-kind="trap" data-trap="format">★</span>
-        <span class="node doc trapHint" data-kind="trap" data-trap="format">Icons-only</span>
-      </div>
-
-      <p>
-        <span class="node doc" data-kind="good">GA4</span>
-        <span class="node doc noSpace" data-kind="good">•</span>
-        <span class="node doc" data-kind="good">SEO</span>
-        <span class="node doc noSpace" data-kind="good">•</span>
-        <span class="node doc" data-kind="good">Accessibility</span>
-        <span class="node doc noSpace" data-kind="good">•</span>
-        <span class="node doc" data-kind="good">CMS</span>
-        <span class="node doc noSpace" data-kind="good">•</span>
-        <span class="node doc" data-kind="good">Reporting</span>
-        <span class="node doc noSpace" data-kind="good">•</span>
-        <span class="node doc" data-kind="good">Content</span>
-        <span class="node doc" data-kind="good">strategy</span>
-      </p>
-    </section>
-
-    <section class="section" data-section="experience" id="sec-experience">
-      <div class="section-title">PROFESSIONAL EXPERIENCE</div>
-
-      <div class="expWrap" id="expWrap">
-        <!-- Companies + bullets. Words are nodes, but movement is constrained by generated maze edges. -->
-
-        <div class="company">
-          <div class="coLine">
-            <div>NORTHRIDGE MEDIA <span class="meta">(B2C analytics)</span></div>
-            <div>New York, NY • 2023–Present</div>
-          </div>
-          <div class="role">Digital Analytics Specialist</div>
-          <ul>
-            <li>
-              <span class="node exp" data-kind="good">Optimized</span>
-              <span class="node exp" data-kind="good">landing</span>
-              <span class="node exp" data-kind="good">pages</span>
-              <span class="node exp" data-kind="good">to</span>
-              <span class="node exp" data-kind="good">increase</span>
-              <span class="node exp" data-kind="good">organic</span>
-              <span class="node exp" data-kind="good">traffic</span>
-              <span class="node exp" data-kind="good">18%</span>
-              <span class="node exp noSpace" data-kind="good">.</span>
-            </li>
-            <li>
-              <span class="node exp" data-kind="good">Built</span>
-              <span class="node exp" data-kind="good">GA4</span>
-              <span class="node exp" data-kind="good">dashboards</span>
-              <span class="node exp" data-kind="good">reducing</span>
-              <span class="node exp" data-kind="good">manual</span>
-              <span class="node exp" data-kind="good">reporting</span>
-              <span class="node exp" data-kind="good">2</span>
-              <span class="node exp" data-kind="good">hours/week</span>
-              <span class="node exp noSpace" data-kind="good">.</span>
-            </li>
-            <li>
-              <span class="node exp" data-kind="good">Ran</span>
-              <span class="node exp" data-kind="good">A/B</span>
-              <span class="node exp" data-kind="good">tests</span>
-              <span class="node exp" data-kind="good">improving</span>
-              <span class="node exp" data-kind="good">CTR</span>
-              <span class="node exp" data-kind="good">0.9</span>
-              <span class="node exp" data-kind="good">points</span>
-              <span class="node exp noSpace" data-kind="good">.</span>
-              <!-- cul-de-sac trap phrase (visually plausible aside) -->
-              <span class="node exp trapHint" data-kind="trap" data-trap="keyword">SEO</span>
-              <span class="node exp trapHint" data-kind="trap" data-trap="keyword">SEO</span>
-              <span class="node exp trapHint" data-kind="trap" data-trap="keyword">SEO</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="company">
-          <div class="coLine">
-            <div>RIVERMILL HEALTH <span class="meta">(higher ed + public health)</span></div>
-            <div>Boston, MA • 2021–2023</div>
-          </div>
-          <div class="role">Web Communications Coordinator</div>
-          <ul>
-            <li>
-              <span class="node exp" data-kind="good">Standardized</span>
-              <span class="node exp" data-kind="good">monthly</span>
-              <span class="node exp" data-kind="good">reports</span>
-              <span class="node exp" data-kind="good">across</span>
-              <span class="node exp" data-kind="good">teams</span>
-              <span class="node exp" data-kind="good">to</span>
-              <span class="node exp" data-kind="good">improve</span>
-              <span class="node exp" data-kind="good">decision-making</span>
-              <span class="node exp noSpace" data-kind="good">.</span>
-            </li>
-            <li>
-              <span class="node exp" data-kind="good">Improved</span>
-              <span class="node exp" data-kind="good">accessibility</span>
-              <span class="node exp" data-kind="good">review</span>
-              <span class="node exp" data-kind="good">workflow</span>
-              <span class="node exp" data-kind="good">and</span>
-              <span class="node exp" data-kind="good">reduced</span>
-              <span class="node exp" data-kind="good">remediation</span>
-              <span class="node exp" data-kind="good">time</span>
-              <span class="node exp noSpace" data-kind="good">.</span>
-              <!-- cul-de-sac trap -->
-              <span class="node exp trapHint" data-kind="trap" data-trap="vague">excellent</span>
-              <span class="node exp trapHint" data-kind="trap" data-trap="vague">communication</span>
-            </li>
-            <li>
-              <span class="node exp" data-kind="good">Reduced</span>
-              <span class="node exp" data-kind="good">bounce</span>
-              <span class="node exp" data-kind="good">rate</span>
-              <span class="node exp" data-kind="good">12%</span>
-              <span class="node exp" data-kind="good">via</span>
-              <span class="node exp" data-kind="good">content</span>
-              <span class="node exp" data-kind="good">updates</span>
-              <span class="node exp noSpace" data-kind="good">.</span>
-            </li>
-            <li>
-              <!-- table-ish formatting trap (shown as a block, navigable as dead end edges) -->
-              <div class="tableHint trapHint">
-                <span class="node exp trapHint" data-kind="trap" data-trap="table">TABLE</span>
-                <span class="node exp trapHint" data-kind="trap" data-trap="table">LAYOUT</span>
-                <span class="node exp trapHint" data-kind="trap" data-trap="table">BREAKS</span>
-                <span class="node exp trapHint" data-kind="trap" data-trap="table">PARSING</span>
-              </div>
-            </li>
-          </ul>
-        </div>
-
-        <div class="company">
-          <div class="coLine">
-            <div>HARBORLIGHT COLLEGE <span class="meta">(institutional web)</span></div>
-            <div>San Francisco, CA • 2019–2021</div>
-          </div>
-          <div class="role">Web Content Specialist</div>
-          <ul>
-            <li>
-              <span class="node exp" data-kind="good">Managed</span>
-              <span class="node exp" data-kind="good">CMS</span>
-              <span class="node exp" data-kind="good">migration</span>
-              <span class="node exp" data-kind="good">to</span>
-              <span class="node exp" data-kind="good">single-column</span>
-              <span class="node exp" data-kind="good">templates</span>
-              <span class="node exp noSpace" data-kind="good">.</span>
-            </li>
-            <li>
-              <span class="node exp" data-kind="good">Refreshed</span>
-              <span class="node exp" data-kind="good">SEO</span>
-              <span class="node exp" data-kind="good">metadata</span>
-              <span class="node exp" data-kind="good">sitewide</span>
-              <span class="node exp" data-kind="good">to</span>
-              <span class="node exp" data-kind="good">support</span>
-              <span class="node exp" data-kind="good">search</span>
-              <span class="node exp" data-kind="good">visibility</span>
-              <span class="node exp noSpace" data-kind="good">.</span>
-            </li>
-            <li>
-              <span class="node exp" data-kind="good">Created</span>
-              <span class="node exp" data-kind="good">style</span>
-              <span class="node exp" data-kind="good">guide</span>
-              <span class="node exp" data-kind="good">and</span>
-              <span class="node exp" data-kind="good">templates</span>
-              <span class="node exp" data-kind="good">for</span>
-              <span class="node exp" data-kind="good">consistent</span>
-              <span class="node exp" data-kind="good">publishing</span>
-              <span class="node exp noSpace" data-kind="good">.</span>
-              <!-- cul-de-sac: first-person -->
-              <span class="node exp trapHint" data-kind="trap" data-trap="firstperson">I</span>
-              <span class="node exp trapHint" data-kind="trap" data-trap="firstperson">personally</span>
-              <span class="node exp trapHint" data-kind="trap" data-trap="firstperson">did</span>
-              <span class="node exp trapHint" data-kind="trap" data-trap="firstperson">everything</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="company">
-          <div class="coLine">
-            <div>KITE STUDIO <span class="meta">(internship)</span></div>
-            <div>San Francisco, CA • 2017–2019</div>
-          </div>
-          <div class="role">Communications Intern</div>
-          <ul>
-            <li>
-              <span class="node exp" data-kind="good">Cleaned</span>
-              <span class="node exp" data-kind="good">datasets</span>
-              <span class="node exp" data-kind="good">for</span>
-              <span class="node exp" data-kind="good">weekly</span>
-              <span class="node exp" data-kind="good">reports</span>
-              <span class="node exp noSpace" data-kind="good">.</span>
-            </li>
-            <li>
-              <span class="node exp" data-kind="good">Automated</span>
-              <span class="node exp" data-kind="good">tagging</span>
-              <span class="node exp" data-kind="good">workflow</span>
-              <span class="node exp" data-kind="good">to</span>
-              <span class="node exp" data-kind="good">reduce</span>
-              <span class="node exp" data-kind="good">errors</span>
-              <span class="node exp noSpace" data-kind="good">.</span>
-              <!-- cul-de-sac: script formatting trap -->
-              <span class="node exp trapHint scriptHint" data-kind="trap" data-trap="format">script-font</span>
-              <span class="node exp trapHint scriptHint" data-kind="trap" data-trap="format">decorative</span>
-            </li>
-            <li>
-              <span class="node exp" data-kind="good">Tracked</span>
-              <span class="node exp" data-kind="good">engagement</span>
-              <span class="node exp" data-kind="good">metrics</span>
-              <span class="node exp" data-kind="good">to</span>
-              <span class="node exp" data-kind="good">inform</span>
-              <span class="node exp" data-kind="good">content</span>
-              <span class="node exp" data-kind="good">calendar</span>
-              <span class="node exp noSpace" data-kind="good">.</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="note">Experience is the maze: not every nearby word is a valid move.</div>
-      </div>
-    </section>
-
-    <section class="section" data-section="projects" id="sec-projects">
-      <div class="section-title">PROJECTS</div>
-      <ul>
-        <li>
-          <span class="node doc" data-kind="good">Website</span>
-          <span class="node doc" data-kind="good">content</span>
-          <span class="node doc" data-kind="good">audit</span>
-          <span class="node doc noSpace" data-kind="good">—</span>
-          <span class="node doc" data-kind="good">built</span>
-          <span class="node doc" data-kind="good">a</span>
-          <span class="node doc" data-kind="good">measurement</span>
-          <span class="node doc" data-kind="good">plan</span>
-          <span class="node doc noSpace" data-kind="good">.</span>
-        </li>
-        <li>
-          <span class="node doc trapHint" data-kind="trap" data-trap="keyword">SEO</span>
-          <span class="node doc trapHint" data-kind="trap" data-trap="keyword">SEO</span>
-          <span class="node doc trapHint" data-kind="trap" data-trap="keyword">SEO</span>
-          <span class="node doc" data-kind="good">campaign</span>
-        </li>
-      </ul>
-    </section>
-
-    <section class="section" data-section="certs" id="sec-certs">
-      <div class="section-title">CERTIFICATIONS</div>
-      <p>
-        <span class="node doc" data-kind="good">Google</span>
-        <span class="node doc" data-kind="good">Analytics</span>
-        <span class="node doc" data-kind="good">Certification</span>
-        <span class="node doc noSpace" data-kind="good">•</span>
-        <span class="node doc" data-kind="good">HubSpot</span>
-        <span class="node doc" data-kind="good">Content</span>
-        <span class="node doc" data-kind="good">Marketing</span>
-      </p>
-    </section>
-
-    <section class="section" data-section="education" id="sec-education">
-      <div class="section-title">EDUCATION</div>
-      <div class="rowline">
-        <div>
-          <span class="node doc" data-kind="good">Resume</span>
-          <span class="node doc" data-kind="good">Worded</span>
-          <span class="node doc" data-kind="good">University</span><br/>
-          <span class="node doc" data-kind="good">B.A.</span>
-          <span class="node doc" data-kind="good">Communications</span>
-        </div>
-        <div style="text-align:right;">
-          <span class="node doc" data-kind="good">San</span>
-          <span class="node doc" data-kind="good">Francisco,</span>
-          <span class="node doc" data-kind="good">CA</span><br/>
-          <span class="node doc" data-kind="good">May</span>
-          <span class="node doc" data-kind="good">2019</span>
-        </div>
-      </div>
-    </section>
-
+  <div class="contact">
+    <span class="node doc">New York, NY</span> •
+    <span class="node doc">first.last@email.com</span> •
+    <span class="node doc">(212) 123-4567</span> •
+    <span class="node doc">linkedin.com/in/username</span>
   </div>
-</main>
+
+  <div class="headshotWrap">
+    <img class="node doc trap headshot" id="photo"
+         src="https://i.pravatar.cc/240?img=32">
+  </div>
+</div>
+
+<section class="section" data-sec="summary">
+  <div class="section-title">SUMMARY</div>
+  <p>
+    <span class="node doc">Data-driven</span>
+    <span class="node doc">communications</span>
+    <span class="node doc">professional</span>
+    <span class="node doc">with</span>
+    <span class="node doc">quantified</span>
+    <span class="node doc">impact</span>.
+    <span class="node doc trap">hard-working</span>
+    <span class="node doc trap">team-player</span>
+  </p>
+</section>
+
+<section class="section" data-sec="skills">
+  <div class="section-title">SKILLS</div>
+  <p>
+    <span class="node doc">GA4</span> •
+    <span class="node doc">SEO</span> •
+    <span class="node doc">Accessibility</span> •
+    <span class="node doc">CMS</span> •
+    <span class="node doc">Reporting</span>
+  </p>
+  <p>
+    <span class="node doc trap">★★★ Skill Bars</span>
+  </p>
+</section>
+
+<section class="section" data-sec="experience">
+  <div class="section-title">PROFESSIONAL EXPERIENCE</div>
+  <div class="expWrap" id="expWrap"></div>
+</section>
+
+<section class="section" data-sec="projects">
+  <div class="section-title">PROJECTS</div>
+  <p>
+    <span class="node doc">Website</span>
+    <span class="node doc">content</span>
+    <span class="node doc">audit</span>.
+    <span class="node doc trap">SEO SEO SEO</span>
+  </p>
+</section>
+
+<section class="section" data-sec="certifications">
+  <div class="section-title">CERTIFICATIONS</div>
+  <p>
+    <span class="node doc">Google Analytics Certification</span>
+  </p>
+</section>
+
+<section class="section" data-sec="education">
+  <div class="section-title">EDUCATION</div>
+  <p>
+    <span class="node doc">Resume Worded University</span>
+    <span class="node doc">B.A. Communications</span>
+  </p>
+</section>
+
+</div>
+</div>
 
 <script>
-/* =========================================================
-   STRICT STATE MACHINE (prevents “stuck” highlighting)
-   mode = "doc" or "exp"
-   ========================================================= */
+/* =============================
+   CORE STATE
+============================= */
 
-const ORDER = ["summary","skills","experience","projects","certs","education"];
+let moves=0, hits=0;
+let stageOrder=["summary","skills","experience","projects","certifications","education"];
+let stageIndex=0;
+let mode="doc";
 
-const pillMoves = document.getElementById("pillMoves");
-const pillHits  = document.getElementById("pillHits");
-const pillScore = document.getElementById("pillScore");
-const objectiveText = document.getElementById("objectiveText");
-const reportBox = document.getElementById("boxReport");
+const movesEl=document.getElementById("moves");
+const hitsEl=document.getElementById("hits");
+const scoreEl=document.getElementById("score");
+const objectiveEl=document.getElementById("objective");
+const reportEl=document.getElementById("report");
 
-const btnNew = document.getElementById("btnNew");
-const btnRestart = document.getElementById("btnRestart");
-const btnHard = document.getElementById("btnHard");
+let docNodes=[...document.querySelectorAll(".doc")];
+let expNodes=[];
+let current;
 
-let hard = false;
+/* =============================
+   EXPERIENCE MAZE (true grid)
+============================= */
 
-let mode = "doc";             // "doc" or "exp"
-let stageIndex = 0;           // which section is current objective
-let completed = false;
+function buildExperience(){
 
-let moves = 0;
-let hits = 0;
+  const wrap=document.getElementById("expWrap");
+  wrap.innerHTML="";
 
-let trapLog = [];             // {trap, where, text}
-let visitedDoc = new Set();   // element ids (or fallback)
-let visitedExp = new Set();   // exp node ids
+  // create dense grid words (12 rows x 10 cols)
+  const rows=12, cols=10;
 
-let docCursor = null;         // current .doc node
-let expCursor = null;         // current .exp node
+  let grid=[];
+  for(let r=0;r<rows;r++){
+    grid[r]=[];
+    for(let c=0;c<cols;c++){
+      const span=document.createElement("span");
+      span.className="node exp";
+      span.textContent=randomWord();
+      wrap.appendChild(span);
+      grid[r][c]=span;
+    }
+    wrap.appendChild(document.createElement("br"));
+  }
 
-// Collect nodes
-const docNodes = Array.from(document.querySelectorAll(".node.doc"));
-const expNodes = Array.from(document.querySelectorAll(".node.exp"));
+  // randomly insert traps
+  for(let i=0;i<25;i++){
+    const r=Math.floor(Math.random()*rows);
+    const c=Math.floor(Math.random()*cols);
+    grid[r][c].classList.add("trap");
+    grid[r][c].textContent="vague";
+  }
 
-// Identify start
-const startNode = docNodes.find(n => n.dataset.id === "start") || docNodes[0];
+  expNodes=[...document.querySelectorAll(".exp")];
 
-// Helper IDs
-function nodeId(el){
-  return el.dataset.id || (el.textContent.trim() + "::" + Math.round(el.getBoundingClientRect().top) + "," + Math.round(el.getBoundingClientRect().left));
+  // store coordinates
+  expNodes.forEach((n,i)=>{
+    n.dataset.index=i;
+  });
+
+  return {grid, rows, cols};
+}
+
+function randomWord(){
+  const words=["optimized","reduced","increased","managed","developed",
+               "implemented","analyzed","improved","automated",
+               "tracked","created","launched","standardized"];
+  return words[Math.floor(Math.random()*words.length)];
+}
+
+let expData=buildExperience();
+
+/* =============================
+   MOVEMENT
+============================= */
+
+function updateUI(){
+  movesEl.textContent="Moves: "+moves;
+  hitsEl.textContent="ATS Hits: "+hits;
+  scoreEl.textContent="Score: "+Math.max(0,100-(hits*10));
+  objectiveEl.textContent=stageOrder[stageIndex].toUpperCase();
 }
 
 function setActive(el){
-  // clear active everywhere
-  docNodes.forEach(n => n.classList.remove("active"));
-  expNodes.forEach(n => n.classList.remove("active"));
+  document.querySelectorAll(".active").forEach(n=>n.classList.remove("active"));
   el.classList.add("active");
 }
 
 function markVisited(el){
   el.classList.add("visited");
-  if(el.classList.contains("doc")) visitedDoc.add(nodeId(el));
-  if(el.classList.contains("exp")) visitedExp.add(nodeId(el));
 }
 
-function isTrap(el){
-  return (el.dataset.kind === "trap") || !!el.dataset.trap;
-}
-
-function hitTrap(el, where){
-  // only count once per element-id to avoid spam penalties
-  const key = (where + "::" + nodeId(el));
-  if(trapLog.some(t => t.key === key)) return;
-
-  hits++;
-  el.classList.add("badHit");
-  trapLog.push({
-    key,
-    trap: el.dataset.trap || "trap",
-    where,
-    text: (el.tagName.toLowerCase()==="img") ? "IMAGE" : el.textContent.trim()
-  });
-}
-
-function computeScore(){
-  // Baseline 100, penalize traps and excessive moves.
-  const movePenalty = Math.max(0, Math.floor((moves - 140) / 4)); // forgiving early
-  const hitPenalty = hits * 12;
-  let score = 100 - movePenalty - hitPenalty;
-  if(hits === 0) score += 6;
-  return Math.max(0, Math.min(100, score));
-}
-
-function updateUI(){
-  pillMoves.textContent = `Moves: ${moves}`;
-  pillHits.textContent  = `ATS Hits: ${hits}`;
-  pillScore.textContent = `Score: ${computeScore()}`;
-
-  if(hard){
-    objectiveText.textContent = `Hard Mode: no target hints`;
-  }else{
-    objectiveText.textContent = `Reach: ${ORDER[stageIndex].toUpperCase()}`;
+function hitTrap(el){
+  if(!el.classList.contains("bad")){
+    el.classList.add("bad");
+    hits++;
   }
 }
 
-/* =========================================================
-   DOC NAVIGATION (geometry-based, smooth)
-   ========================================================= */
+function moveDoc(direction){
+  const list=[...document.querySelectorAll(".doc")];
+  const i=list.indexOf(current);
+  if(i<0) return;
 
-function docMove(direction){
-  const cur = docCursor;
-  if(!cur) return;
+  let next=null;
 
-  const curR = cur.getBoundingClientRect();
-  const cx = (curR.left + curR.right)/2;
-  const cy = (curR.top + curR.bottom)/2;
+  if(direction==="right") next=list[i+1];
+  if(direction==="left") next=list[i-1];
+  if(direction==="down") next=list[i+2];
+  if(direction==="up") next=list[i-2];
 
-  let best = null;
-  let bestScore = Infinity;
-
-  for(const n of docNodes){
-    if(n === cur) continue;
-
-    const r = n.getBoundingClientRect();
-    const nx = (r.left + r.right)/2;
-    const ny = (r.top + r.bottom)/2;
-
-    const dx = nx - cx;
-    const dy = ny - cy;
-
-    if(direction==="right" && dx <= 6) continue;
-    if(direction==="left"  && dx >= -6) continue;
-    if(direction==="down"  && dy <= 6) continue;
-    if(direction==="up"    && dy >= -6) continue;
-
-    const primary = (direction==="right"||direction==="left") ? Math.abs(dx) : Math.abs(dy);
-    const secondary = (direction==="right"||direction==="left") ? Math.abs(dy) : Math.abs(dx);
-
-    const score = primary + secondary*0.6;
-    if(score < bestScore){
-      bestScore = score;
-      best = n;
-    }
-  }
-
-  if(!best) return;
+  if(!next) return;
 
   moves++;
-  docCursor = best;
+  current=next;
+  setActive(current);
+  markVisited(current);
 
-  setActive(best);
-  markVisited(best);
+  if(current.classList.contains("trap")) hitTrap(current);
 
-  // entering or clicking trap => red + penalty
-  if(isTrap(best)) hitTrap(best, "entered (doc)");
+  const sec=current.closest(".section")?.dataset.sec;
+  if(sec===stageOrder[stageIndex]) stageIndex++;
 
-  // Special: headshot image itself
-  if(best.dataset.id === "headshot") hitTrap(best, "entered (doc)");
-
-  // Progress section order by “being in the section”
-  const section = best.closest(".section")?.dataset.section || best.closest(".header") ? null : null;
-  maybeAdvanceStage(section);
-
-  // If we arrived in EXPERIENCE while it is the target, switch modes into true maze
-  if(isInExperienceArea(best) && ORDER[stageIndex] === "experience"){
-    switchToExperienceMaze();
-  }
+  if(sec==="experience") mode="exp";
 
   updateUI();
-  maybeComplete();
 }
 
-function isInExperienceArea(el){
-  return !!el.closest("#sec-experience");
-}
+function moveExp(direction){
 
-function maybeAdvanceStage(sectionName){
-  if(hard) return; // still advance, just don't reveal target
-  if(!sectionName) return;
-  const target = ORDER[stageIndex];
-  if(sectionName === target && stageIndex < ORDER.length-1){
-    stageIndex++;
-  }
-}
+  const {rows,cols}=expData;
+  const index=parseInt(current.dataset.index);
+  const r=Math.floor(index/cols);
+  const c=index%cols;
 
-/* =========================================================
-   EXPERIENCE TRUE MAZE (generated graph over expNodes)
-   ========================================================= */
+  let nr=r, nc=c;
 
-let expGraph = new Map(); // nodeId -> Set(nodeId)
-let expIdToEl = new Map();
+  if(direction==="right") nc++;
+  if(direction==="left") nc--;
+  if(direction==="down") nr++;
+  if(direction==="up") nr--;
 
-function buildExperienceGraph(){
-  expGraph = new Map();
-  expIdToEl = new Map();
+  if(nr<0||nr>=rows||nc<0||nc>=cols) return;
 
-  // stable id assignment
-  const ids = expNodes.map((el, i) => {
-    // deterministic within page
-    const id = el.dataset.expId || ("exp_" + i);
-    el.dataset.expId = id;
-    expIdToEl.set(id, el);
-    expGraph.set(id, new Set());
-    return id;
-  });
+  const nextIndex=nr*cols+nc;
+  const next=expNodes[nextIndex];
+  if(!next) return;
 
-  // Create a maze over an implicit grid:
-  // We'll cluster nodes into "rows" based on visual y (line), then "cols" by x ordering.
-  // Then carve a DFS maze on that grid of existing cells.
-  const positions = ids.map(id => {
-    const el = expIdToEl.get(id);
-    const r = el.getBoundingClientRect();
-    return {id, x:(r.left+r.right)/2, y:(r.top+r.bottom)/2};
-  }).sort((a,b)=> a.y===b.y ? a.x-b.x : a.y-b.y);
-
-  // Bucket into rows by y proximity
-  const rows = [];
-  const rowThreshold = 10; // px
-  for(const p of positions){
-    let placed = false;
-    for(const row of rows){
-      if(Math.abs(row.yAvg - p.y) <= rowThreshold){
-        row.items.push(p);
-        row.yAvg = row.items.reduce((s,q)=>s+q.y,0)/row.items.length;
-        placed = true;
-        break;
-      }
-    }
-    if(!placed){
-      rows.push({yAvg:p.y, items:[p]});
-    }
-  }
-  rows.forEach(r => r.items.sort((a,b)=>a.x-b.x));
-
-  // Build coordinate map (r,c) -> id
-  const coordToId = new Map();
-  const idToCoord = new Map();
-  rows.forEach((row, rIdx)=>{
-    row.items.forEach((p, cIdx)=>{
-      const key = rIdx + "," + cIdx;
-      coordToId.set(key, p.id);
-      idToCoord.set(p.id, {r:rIdx, c:cIdx});
-    });
-  });
-
-  // Neighbors in this coordinate grid
-  function neighborIds(id){
-    const cc = idToCoord.get(id);
-    const out = [];
-    const candidates = [
-      {dr:0, dc:1}, {dr:0, dc:-1}, {dr:1, dc:0}, {dr:-1, dc:0}
-    ];
-    for(const d of candidates){
-      const k = (cc.r+d.dr) + "," + (cc.c+d.dc);
-      if(coordToId.has(k)) out.push(coordToId.get(k));
-    }
-    return out;
-  }
-
-  // DFS maze generation on existing nodes
-  const startId = ids[0];
-  const stack = [startId];
-  const visited = new Set([startId]);
-
-  function shuffle(a){
-    for(let i=a.length-1;i>0;i--){
-      const j=Math.floor(Math.random()*(i+1));
-      [a[i],a[j]]=[a[j],a[i]];
-    }
-    return a;
-  }
-
-  while(stack.length){
-    const cur = stack[stack.length-1];
-    const nbs = shuffle(neighborIds(cur)).filter(n => !visited.has(n));
-    if(!nbs.length){ stack.pop(); continue; }
-    const nxt = nbs[0];
-
-    // Carve edge cur <-> nxt
-    expGraph.get(cur).add(nxt);
-    expGraph.get(nxt).add(cur);
-
-    visited.add(nxt);
-    stack.push(nxt);
-  }
-
-  // Add extra “loops” for alternate paths (but keep maze feel)
-  // Pick random adjacent pairs and connect if not already connected.
-  const extraEdges = Math.min(24, Math.floor(ids.length * 0.07));
-  for(let i=0;i<extraEdges;i++){
-    const a = ids[Math.floor(Math.random()*ids.length)];
-    const nbs = neighborIds(a);
-    if(!nbs.length) continue;
-    const b = nbs[Math.floor(Math.random()*nbs.length)];
-    if(!expGraph.get(a).has(b)){
-      expGraph.get(a).add(b);
-      expGraph.get(b).add(a);
-    }
-  }
-
-  // Make trap cul-de-sacs more common by pruning some edges leading into trap nodes
-  // (Keeps them reachable but often dead ends.)
-  for(const id of ids){
-    const el = expIdToEl.get(id);
-    if(el?.dataset.kind === "trap"){
-      // if degree > 1, randomly keep only 1 connection
-      const neigh = Array.from(expGraph.get(id));
-      if(neigh.length > 1){
-        const keep = neigh[Math.floor(Math.random()*neigh.length)];
-        expGraph.set(id, new Set([keep]));
-        // ensure keep still points back
-        expGraph.get(keep).add(id);
-        // remove other backlinks
-        for(const other of neigh){
-          if(other === keep) continue;
-          expGraph.get(other).delete(id);
-        }
-      }
-    }
-  }
-
-  // Select an “entrance” and “exit” word in Experience maze
-  // entrance: first word of first bullet
-  // exit: last word near bottom (choose last id)
-  const entrance = ids[0];
-  const exit = ids[ids.length-1];
-  return {entrance, exit};
-}
-
-let expEntrance = null;
-let expExit = null;
-
-function switchToExperienceMaze(){
-  // Switch state cleanly: mode=exp and set expCursor to entrance
-  mode = "exp";
-
-  // Build (or rebuild) maze
-  const built = buildExperienceGraph();
-  expEntrance = built.entrance;
-  expExit = built.exit;
-
-  expCursor = expIdToEl.get(expEntrance);
-  setActive(expCursor);
-  markVisited(expCursor);
-  updateUI();
-}
-
-function expMove(direction){
-  if(!expCursor) return;
-
-  const curId = expCursor.dataset.expId;
-  const neighIds = Array.from(expGraph.get(curId) || []);
-  if(!neighIds.length) return;
-
-  // Choose among allowed neighbors the one that best matches the direction geometrically.
-  const curR = expCursor.getBoundingClientRect();
-  const cx = (curR.left + curR.right)/2;
-  const cy = (curR.top + curR.bottom)/2;
-
-  let best = null;
-  let bestScore = Infinity;
-
-  for(const nid of neighIds){
-    const el = expIdToEl.get(nid);
-    if(!el) continue;
-
-    const r = el.getBoundingClientRect();
-    const nx = (r.left + r.right)/2;
-    const ny = (r.top + r.bottom)/2;
-
-    const dx = nx - cx;
-    const dy = ny - cy;
-
-    if(direction==="right" && dx <= 4) continue;
-    if(direction==="left"  && dx >= -4) continue;
-    if(direction==="down"  && dy <= 4) continue;
-    if(direction==="up"    && dy >= -4) continue;
-
-    const primary = (direction==="right"||direction==="left") ? Math.abs(dx) : Math.abs(dy);
-    const secondary = (direction==="right"||direction==="left") ? Math.abs(dy) : Math.abs(dx);
-    const score = primary + secondary*0.6;
-
-    if(score < bestScore){
-      bestScore = score;
-      best = el;
-    }
-  }
-
-  // If no neighbor in that direction, do nothing (feels like hitting a wall)
-  if(!best) return;
-
-  // Move
   moves++;
-  expCursor = best;
+  current=next;
+  setActive(current);
+  markVisited(current);
 
-  setActive(best);
-  markVisited(best);
-
-  if(isTrap(best)) hitTrap(best, "entered (experience)");
-
-  updateUI();
-
-  // If reached exit, return to doc mode at first Projects node
-  if(best.dataset.expId === expExit){
-    // exit experience: set mode back to doc and move cursor to first projects doc node
-    mode = "doc";
-    const proj = document.querySelector("#sec-projects .node.doc") || docNodes.find(n=>n.closest("#sec-projects"));
-    if(proj){
-      docCursor = proj;
-      setActive(proj);
-      markVisited(proj);
-      // advance stage if appropriate
-      if(!hard && ORDER[stageIndex] === "projects") stageIndex++;
-      updateUI();
-    }
-  }
-
-  maybeComplete();
-}
-
-/* =========================================================
-   Completion + Narrative Report
-   ========================================================= */
-
-function maybeComplete(){
-  if(completed) return;
-
-  if(mode !== "doc" || !docCursor) return;
-
-  const sec = docCursor.closest(".section")?.dataset.section;
-  if(sec === "education"){
-    // Only complete if they have advanced to education objective or are at end of order.
-    if(!hard && ORDER[stageIndex] !== "education") return;
-
-    completed = true;
-    renderReport();
-  }
-}
-
-function renderReport(){
-  const score = computeScore();
-
-  // Summarize trap types
-  const counts = {};
-  for(const t of trapLog){
-    counts[t.trap] = (counts[t.trap]||0) + 1;
-  }
-  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,4);
-
-  const sawPhoto = !!counts.photo;
-  const sawFormat = !!counts.format;
-  const sawTable = !!counts.table;
-  const sawKeyword = !!counts.keyword;
-  const sawVague = !!counts.vague;
-  const sawFirst = !!counts.firstperson;
-
-  const strengths = [];
-  const issues = [];
-
-  // Strengths (inferred)
-  if(hits <= 1) strengths.push("You largely avoided high-risk ATS elements, keeping your route text-first and parseable.");
-  if(moves <= 200) strengths.push("Your navigation was relatively efficient, suggesting you followed section structure instead of wandering randomly.");
-  strengths.push("You progressed through the resume in a conventional scan order, reinforcing structural clarity (headers → bullets → supporting details).");
-
-  // Issues (ATS literacy)
-  if(sawPhoto) issues.push("You interacted with a headshot. Photos are often excluded or mishandled by ATS and can introduce screening risks; ATS-optimized resumes typically avoid them.");
-  if(sawFormat) issues.push("You entered formatting-risk zones (icons/skill bars/script styling). These can prevent ATS from extracting skills correctly or can reorder text unpredictably.");
-  if(sawTable) issues.push("You entered a table-layout block. Tables frequently break ATS parsing because content is read column-by-column out of intended order.");
-  if(sawKeyword) issues.push("You entered keyword-stuffing fragments. Repetition without context can read as spam; better to embed keywords inside evidence-based bullets.");
-  if(sawVague) issues.push("You entered vague, low-signal claims (e.g., ‘hard-working’). ATS does not reward them; humans discount them without specific outcomes.");
-  if(sawFirst) issues.push("You entered first-person phrasing. Resumes are conventionally written without ‘I’ to keep bullets concise and role-focused.");
-
-  if(issues.length === 0){
-    issues.push("No major ATS pitfalls were triggered. Next-level improvements would be tailoring: matching job-posting language with specific tools, scope, and outcomes.");
-  }
-
-  let html = `<div class="box" style="border-top:none;padding-top:0;margin-top:0;">
-    <strong>Completion Report</strong>
-    <div class="small" style="margin-top:8px;">
-      Score: <strong>${score}/100</strong><br/>
-      Moves: <strong>${moves}</strong><br/>
-      ATS hits: <strong>${hits}</strong>
-    </div>
-  </div>`;
-
-  html += `<div class="box">
-    <strong>What was working</strong>
-    <ul class="small">${strengths.map(s=>`<li>${s}</li>`).join("")}</ul>
-  </div>`;
-
-  html += `<div class="box">
-    <strong>What was not working (ATS perspective)</strong>
-    <ul class="small">${issues.map(s=>`<li>${s}</li>`).join("")}</ul>
-  </div>`;
-
-  if(top.length){
-    html += `<div class="box">
-      <strong>Most frequent pitfall types</strong>
-      <ul class="small">${top.map(([t,c])=>`<li>${t} (${c})</li>`).join("")}</ul>
-    </div>`;
-  }
-
-  html += `<div class="box">
-    <strong>Practical takeaway</strong>
-    <div class="small" style="margin-top:6px;">
-      Keep resumes single-column and text-first; replace vague claims with quantified outcomes; use keywords only where they’re supported by concrete tools, scope, and results.
-    </div>
-  </div>`;
-
-  reportBox.style.display = "block";
-  reportBox.innerHTML = html;
-}
-
-/* =========================================================
-   Click handling: clicking a trap marks red + penalizes
-   ========================================================= */
-function attachClickHandlers(){
-  for(const el of [...docNodes, ...expNodes]){
-    el.addEventListener("click", ()=>{
-      if(isTrap(el)){
-        hitTrap(el, "clicked");
-        updateUI();
-      }
-    });
-  }
-
-  const hs = document.getElementById("headshot");
-  if(hs){
-    hs.addEventListener("click", ()=>{
-      hitTrap(hs, "clicked");
-      updateUI();
-    });
-  }
-}
-
-/* =========================================================
-   Hard mode + Round controls
-   ========================================================= */
-
-function toggleHard(){
-  hard = !hard;
-  document.body.classList.toggle("hard", hard);
-  btnHard.textContent = `Hard Mode: ${hard ? "On" : "Off"}`;
-  updateUI();
-}
-
-btnHard.addEventListener("click", toggleHard);
-
-btnRestart.addEventListener("click", ()=>resetGame(false));
-btnNew.addEventListener("click", ()=>resetGame(true));
-
-function resetGame(newRound){
-  // clear state
-  completed = false;
-  mode = "doc";
-  stageIndex = 0;
-
-  moves = 0;
-  hits = 0;
-  trapLog = [];
-  visitedDoc = new Set();
-  visitedExp = new Set();
-
-  // clear classes
-  [...docNodes, ...expNodes].forEach(n=>{
-    n.classList.remove("active","visited","badHit");
-  });
-  const hs = document.getElementById("headshot");
-  if(hs) hs.classList.remove("active","visited","badHit");
-
-  // rebuild experience maze for a new round
-  // (graph depends on geometry; rebuilding introduces a new maze)
-  // Slightly perturb trap pruning by rebuilding after a tiny layout tick.
-  setTimeout(()=>{
-    const built = buildExperienceGraph();
-    expEntrance = built.entrance;
-    expExit = built.exit;
-  }, 0);
-
-  // reset cursor
-  docCursor = startNode;
-  setActive(docCursor);
-  markVisited(docCursor);
-
-  reportBox.style.display = "none";
-  reportBox.innerHTML = "";
+  if(current.classList.contains("trap")) hitTrap(current);
 
   updateUI();
 }
 
-/* =========================================================
-   Keyboard handling (no more stuck behavior)
-   ========================================================= */
+/* =============================
+   CONTROLS
+============================= */
 
-document.addEventListener("keydown", (e)=>{
-  if(completed) return;
-  const k = e.key;
-  if(!["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(k)) return;
+document.addEventListener("keydown",e=>{
+  if(!["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)) return;
   e.preventDefault();
 
-  const dir = k==="ArrowRight" ? "right" : k==="ArrowLeft" ? "left" : k==="ArrowDown" ? "down" : "up";
+  const dir=e.key.replace("Arrow","").toLowerCase();
 
-  if(mode === "doc"){
-    docMove(dir);
-  } else {
-    expMove(dir);
-  }
-}, {passive:false});
+  if(mode==="doc") moveDoc(dir);
+  else moveExp(dir);
+});
 
-/* =========================================================
-   Init
-   ========================================================= */
-attachClickHandlers();
-resetGame(true);
+function resetGame(){
+  moves=0; hits=0; stageIndex=0; mode="doc";
+  document.querySelectorAll(".visited,.bad,.active").forEach(n=>{
+    n.classList.remove("visited","bad","active");
+  });
+  current=document.getElementById("start");
+  setActive(current);
+  markVisited(current);
+  updateUI();
+}
+
+current=document.getElementById("start");
+setActive(current);
 updateUI();
-</script>
 
+</script>
 </body>
 </html>
