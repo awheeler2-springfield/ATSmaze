@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze — Exploratory Experience</title>
+<title>ATS Resume Maze — Strategic Experience</title>
 
 <style>
 :root{
@@ -17,33 +17,26 @@
   --teal:#0A6E6E;
   --red:#ff6b6b;
 }
-
-body{ margin:0; background:var(--bg); font-family:Georgia, serif; color:var(--ink); }
+body{ margin:0; background:var(--bg); font-family:Georgia, serif; }
 
 .rail{
   position:fixed; left:0; top:0;
   width:340px; height:100vh;
-  background:var(--nav);
-  color:#fff;
-  padding:16px;
-  box-sizing:border-box;
-  overflow:auto;
+  background:var(--nav); color:#fff;
+  padding:16px; box-sizing:border-box;
 }
-.stat{ margin:8px 0; font-family:Arial,sans-serif; }
+.stat{ margin:8px 0; font-family:Arial; }
 button{
-  cursor:pointer; border:none; padding:10px 12px;
+  cursor:pointer; border:none;
+  padding:10px 12px;
   font-weight:bold; border-radius:6px;
   background:#FFFBF0; color:var(--nav);
 }
-button:hover{ filter:brightness(.95); }
-
-#pathBox{ margin-top:12px; font-family:Arial,sans-serif; font-size:.85rem; }
+#pathBox{ margin-top:12px; font-family:Arial; font-size:.85rem; }
 #pathBox code{
   display:block; background:rgba(255,255,255,.12);
   padding:8px; border-radius:6px; margin-top:6px;
 }
-
-#report{ margin-top:14px; font-family:Arial,sans-serif; font-size:.9rem; }
 
 .page{ margin-left:340px; padding:30px 20px; }
 .resume{
@@ -71,10 +64,10 @@ button:hover{ filter:brightness(.95); }
 .node.available{ outline:2px solid rgba(10,110,110,.35); outline-offset:2px; }
 .node.visited{ background:var(--yellow); }
 .node.current{ background:var(--tealbg); outline:2px solid var(--teal); }
-.node.bad{ background:var(--red) !important; color:#fff; }
+.node.bad{ background:var(--red)!important; color:#fff; }
 
 .detour{
-  font-family:Arial,sans-serif;
+  font-family:Arial;
   font-size:.85rem;
   background:#f2f2f2;
   border:1px solid #e3e3e3;
@@ -96,23 +89,18 @@ li{ margin:6px 0; }
 }
 </style>
 </head>
-
 <body>
 
 <div class="rail">
   <h2>ATS Resume Maze</h2>
   <div class="stat"><strong>Moves:</strong> <span id="moveCount">0</span></div>
   <div class="stat"><strong>Score:</strong> <span id="score">100</span></div>
-  <div class="stat"><strong>Best:</strong> <span id="bestScore">—</span></div>
-
   <button id="resetBtn">Reset Run</button>
 
   <div id="pathBox">
     <strong>Path:</strong>
     <code id="pathText">header</code>
   </div>
-
-  <div id="report"></div>
 </div>
 
 <div class="page">
@@ -136,9 +124,8 @@ li{ margin:6px 0; }
 <div class="section">
 <div class="section-title">PROFESSIONAL EXPERIENCE</div>
 <ul id="expBackbone"></ul>
-
 <div class="exp-grid">
-<strong>Experience Drafting Detours (changes each run)</strong>
+<strong>Drafting Risks</strong>
 <div id="expDetours"></div>
 </div>
 </div>
@@ -162,19 +149,15 @@ li{ margin:6px 0; }
 </div>
 
 <script>
-/* ---------- Persistence ---------- */
-const BEST_KEY="atsMazeBestScore";
-function getBest(){const r=localStorage.getItem(BEST_KEY);return r?Number(r):null;}
-function setBest(s){const b=getBest();if(b===null||s>b)localStorage.setItem(BEST_KEY,s);}
-function updateBest(){document.getElementById("bestScore").textContent=getBest()??"—";}
-
-/* ---------- Graph ---------- */
 let nodes={}, graph={}, detours=[];
 
-function addNode(id,label,tag=""){nodes[id]={id,label,tag,el:null};graph[id]=[];}
+function addNode(id,label,tag=""){
+  nodes[id]={id,label,tag,el:null};
+  graph[id]=[];
+}
 function connect(a,b){
-if(!graph[a].includes(b))graph[a].push(b);
-if(!graph[b].includes(a))graph[b].push(a);
+  if(!graph[a].includes(b))graph[a].push(b);
+  if(!graph[b].includes(a))graph[b].push(a);
 }
 
 function buildGraph(){
@@ -194,75 +177,70 @@ addNode("exp_entry","Enter Experience");
 addNode("exp_exit","Exit Experience");
 connect("skills","exp_entry");
 
-const backbone=["exp_b1","exp_b2","exp_b3","exp_b4","exp_b5"];
-const labels=[
-"Role + Company context",
-"Strong action verbs",
-"Quantified impact",
-"Tailored keywords",
-"Clean formatting"
-];
+/* Strategic parallel backbone */
 
-backbone.forEach((id,i)=>addNode(id,labels[i]));
-connect("exp_entry","exp_b1");
+addNode("exp_role","Role + Company");
+addNode("exp_verbs","Strong Verbs");
+addNode("exp_metrics","Quantified Impact");
+addNode("exp_keywords","Tailored Keywords");
+addNode("exp_format","Clean Formatting");
 
-for(let i=0;i<backbone.length-1;i++){
-connect(backbone[i],backbone[i+1]);
-}
-connect("exp_b5","exp_exit");
+/* Entry */
+connect("exp_entry","exp_role");
 
-/* Cross-links for exploratory density */
-connect("exp_b1","exp_b3");
-connect("exp_b2","exp_b4");
-connect("exp_b3","exp_b5");
+/* Route A (Impact-first) */
+connect("exp_role","exp_metrics");
+connect("exp_metrics","exp_verbs");
+connect("exp_verbs","exp_keywords");
+connect("exp_keywords","exp_format");
 
-/* Forward-recovering detours */
-const trapTypes=[
-["weak_verbs","Weak verbs"],
-["no_metrics","No metrics"],
-["generic_alignment","Generic alignment"],
-["tables_layout","Tables/columns"],
-["graphics_icons","Icons/graphics"],
-["keyword_dump","Keyword dumping"]
-];
+/* Route B (ATS-first) */
+connect("exp_role","exp_keywords");
+connect("exp_keywords","exp_format");
+connect("exp_format","exp_verbs");
+connect("exp_verbs","exp_metrics");
 
-const recover={
-exp_b1:"exp_b2",
-exp_b2:"exp_b3",
-exp_b3:"exp_b4",
-exp_b4:"exp_b5"
-};
-
-let count=0;
-for(let anchor of ["exp_b1","exp_b2","exp_b3","exp_b4"]){
-if(Math.random()<0.8){
-count++;
-let t=trapTypes[Math.floor(Math.random()*trapTypes.length)];
-let id="exp_s"+count;
-addNode(id,t[1],"trap:"+t[0]);
-detours.push(id);
-connect(anchor,id);
-connect(id,recover[anchor]);
-}
-}
+/* Exit */
+connect("exp_format","exp_exit");
+connect("exp_metrics","exp_exit");
 
 connect("exp_exit","projects");
 connect("projects","certifications");
 connect("certifications","education");
+
+/* Detours */
+const traps=[
+["weak_verbs","Weak verbs"],
+["no_metrics","No metrics"],
+["tables_layout","Tables/columns"],
+["keyword_dump","Keyword dumping"]
+];
+
+let count=0;
+for(let anchor of ["exp_role","exp_verbs","exp_metrics","exp_keywords"]){
+if(Math.random()<0.7){
+count++;
+let t=traps[Math.floor(Math.random()*traps.length)];
+let id="exp_s"+count;
+addNode(id,t[1],"trap:"+t[0]);
+detours.push(id);
+connect(anchor,id);
+connect(id,"exp_format"); // recover to format hub
+}
+}
 }
 
-/* ---------- State ---------- */
-function newState(){return{
+function newState(){
+return{
 current:"header",
 visited:new Set(["header"]),
 moves:0,
-traps:new Map(),
-complete:false,
+traps:new Set(),
 path:["header"]
-};}
+};
+}
 let state;
 
-/* ---------- UI ---------- */
 function makeNode(id,text,cls=""){
 let s=document.createElement("span");
 s.className="node "+cls;
@@ -291,9 +269,10 @@ nodes[id].el.classList.remove("disabled");
 nodes[id].el.classList.add("available");
 });
 
-document.getElementById("pathText").textContent=state.path.join(" → ");
 document.getElementById("moveCount").textContent=state.moves;
-document.getElementById("score").textContent=Math.max(0,100-state.moves-(state.traps.size*8));
+document.getElementById("score").textContent=
+Math.max(0,100-state.moves-(state.traps.size*8));
+document.getElementById("pathText").textContent=state.path.join(" → ");
 }
 
 function flash(id){
@@ -311,32 +290,14 @@ state.visited.add(id);
 state.path.push(id);
 
 if(nodes[id].tag?.startsWith("trap:")){
-let type=nodes[id].tag.split(":")[1];
-state.traps.set(type,true);
+state.traps.add(nodes[id].tag);
 render();
 flash(id);
 }else{
 render();
 }
-
-if(id==="education"){
-state.complete=true;
-finish();
-}
 }
 
-function finish(){
-let score=Math.max(0,100-state.moves-(state.traps.size*8));
-setBest(score); updateBest();
-
-let html="<h3>Run Summary</h3>";
-html+="<p><strong>Score:</strong> "+score+"<br>";
-html+="<strong>Moves:</strong> "+state.moves+"</p>";
-html+="<p><strong>Trap Types:</strong> "+(state.traps.size||"None")+"</p>";
-document.getElementById("report").innerHTML=html;
-}
-
-/* ---------- Build Resume ---------- */
 function buildResume(){
 document.getElementById("headerLine").innerHTML="";
 document.getElementById("summaryLine").innerHTML="";
@@ -349,12 +310,11 @@ document.getElementById("expDetours").innerHTML="";
 
 document.getElementById("headerLine").append(
 makeNode("header","FIRST LAST"),
-document.createTextNode(" • Springfield, MA • email@example.com • (555) 555-5555")
+document.createTextNode(" • Springfield, MA • email@example.com")
 );
 
 document.getElementById("summaryLine").append(
-makeNode("summary","Data-driven analytics professional"),
-document.createTextNode(" with measurable impact.")
+makeNode("summary","Data-driven analytics professional")
 );
 
 document.getElementById("skillsLine").append(
@@ -363,7 +323,8 @@ makeNode("skills","GA4 • SEO • Reporting")
 
 let ul=document.getElementById("expBackbone");
 ul.appendChild(document.createElement("li")).appendChild(makeNode("exp_entry"));
-["exp_b1","exp_b2","exp_b3","exp_b4","exp_b5"].forEach(id=>{
+["exp_role","exp_verbs","exp_metrics","exp_keywords","exp_format"]
+.forEach(id=>{
 ul.appendChild(document.createElement("li")).appendChild(makeNode(id));
 });
 ul.appendChild(document.createElement("li")).appendChild(makeNode("exp_exit"));
@@ -373,23 +334,19 @@ detours.forEach(id=>{
 d.appendChild(makeNode(id,null,"detour"));
 });
 
-document.getElementById("projectsLine").append(makeNode("projects","ATS Resume Maze Prototype"));
-document.getElementById("certsLine").append(makeNode("certifications","Google Analytics Certification"));
+document.getElementById("projectsLine").append(makeNode("projects","ATS Resume Maze"));
+document.getElementById("certsLine").append(makeNode("certifications","Google Analytics Cert"));
 document.getElementById("educationLine").append(makeNode("education","B.A., Communication"));
 }
 
-/* ---------- Reset ---------- */
 function reset(){
 buildGraph();
 buildResume();
 state=newState();
 render();
-updateBest();
-document.getElementById("report").innerHTML="";
 }
 document.getElementById("resetBtn").onclick=reset;
 
-/* ---------- Init ---------- */
 reset();
 </script>
 </body>
