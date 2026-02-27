@@ -3,76 +3,28 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ATS Resume Maze — Conceptual Model</title>
+<title>ATS Resume Maze — Experience Cluster</title>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  display: flex;
-  height: 100vh;
-}
-
-#rail {
-  width: 300px;
-  background: #1D3461;
-  color: white;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-#rail h2 {
-  margin-top: 0;
-}
-
-#maze {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(4, 180px);
-  grid-template-rows: repeat(3, 130px);
-  gap: 20px;
-  justify-content: center;
-  align-content: center;
-  background: #f5f5f5;
-}
+body { font-family: Arial; margin: 0; display: flex; height: 100vh; }
+#rail { width: 320px; background: #1D3461; color: white; padding: 20px; box-sizing: border-box; }
+#maze { flex: 1; display: grid; grid-template-columns: repeat(4, 190px); gap: 18px; justify-content: center; align-content: center; background: #f5f5f5; }
 
 .node {
   background: white;
   border: 2px solid #ccc;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  text-align: center;
   padding: 10px;
+  text-align: center;
+  cursor: pointer;
   font-weight: bold;
-  transition: 0.2s ease;
 }
 
-.visited {
-  background: #FFFBF0;
-  border-color: #C96A00;
-}
+.visited { background: #FFFBF0; border-color: #C96A00; }
+.current { background: #F0FAFB; border-color: #0A6E6E; }
+.available { border-color: #0A6E6E; }
+.disabled { pointer-events: none; opacity: 0.5; }
 
-.current {
-  background: #F0FAFB;
-  border-color: #0A6E6E;
-}
-
-.available {
-  border-color: #0A6E6E;
-}
-
-.disabled {
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-#diagnostic {
-  margin-top: 20px;
-  font-size: 0.9rem;
-  line-height: 1.4;
-}
+#diagnostic { margin-top: 20px; font-size: 0.9rem; }
 </style>
 </head>
 <body>
@@ -88,9 +40,16 @@ body {
   <div class="node" id="header">Header</div>
   <div class="node" id="summary">Summary</div>
   <div class="node" id="skills">Skills</div>
-  <div class="node" id="graphics_resume">Graphic Design Resume</div>
-  <div class="node" id="experience">Experience</div>
-  <div class="node" id="keyword_stuffing">Keyword Stuffing</div>
+
+  <div class="node" id="experience_intro">Experience Intro</div>
+  <div class="node" id="bullet_style">Bullet Structure</div>
+  <div class="node" id="weak_verbs">Weak Verbs</div>
+  <div class="node" id="strong_verbs">Strong Action Verbs</div>
+  <div class="node" id="no_metrics">No Metrics</div>
+  <div class="node" id="with_metrics">Quantified Impact</div>
+  <div class="node" id="generic_alignment">Generic Experience</div>
+  <div class="node" id="tailored_alignment">Tailored to Job</div>
+
   <div class="node" id="projects">Projects</div>
   <div class="node" id="certifications">Certifications</div>
   <div class="node" id="education">Education</div>
@@ -99,37 +58,45 @@ body {
 <script type="module">
 
 /* =========================
-   GRAPH — Conceptual Flow
+   GRAPH (Conceptual)
 ========================= */
 
 const graph = {
+
   header: ["summary"],
-  summary: ["skills", "graphics_resume"],
-  skills: ["experience", "keyword_stuffing"],
-  graphics_resume: ["skills"],
-  keyword_stuffing: ["experience"],
-  experience: ["projects"],
+  summary: ["skills"],
+  skills: ["experience_intro"],
+
+  experience_intro: ["bullet_style"],
+
+  bullet_style: ["weak_verbs", "strong_verbs"],
+
+  weak_verbs: ["strong_verbs"],
+
+  strong_verbs: ["no_metrics", "with_metrics"],
+
+  no_metrics: ["with_metrics"],
+
+  with_metrics: ["generic_alignment", "tailored_alignment"],
+
+  generic_alignment: ["tailored_alignment"],
+
+  tailored_alignment: ["projects"],
+
   projects: ["certifications"],
   certifications: ["education"],
   education: []
 };
 
+/* =========================
+   TRAP DEFINITIONS
+========================= */
+
 const trapExplanations = {
-  graphics_resume: "Graphic-heavy resumes often fail ATS parsing because text is embedded in images.",
-  keyword_stuffing: "Keyword stuffing can trigger ATS filters or lower semantic match quality."
+  weak_verbs: "Using passive or vague verbs weakens ATS keyword strength.",
+  no_metrics: "Lack of quantifiable results reduces match scoring.",
+  generic_alignment: "Experience not tailored to job description lowers ranking."
 };
-
-function validateGraph(graph) {
-  for (const node in graph) {
-    graph[node].forEach(neighbor => {
-      if (!graph[neighbor]) {
-        throw new Error(`Invalid edge: ${node} → ${neighbor}`);
-      }
-    });
-  }
-}
-
-validateGraph(graph);
 
 /* =========================
    STATE
@@ -174,10 +141,7 @@ function attemptMove(state, targetNode) {
 }
 
 function calculateScore(state) {
-  return Math.max(
-    0,
-    100 - state.moves - (state.trapsHit.size * 10)
-  );
+  return Math.max(0, 100 - state.moves - (state.trapsHit.size * 10));
 }
 
 /* =========================
@@ -186,7 +150,7 @@ function calculateScore(state) {
 
 function render(state) {
   document.querySelectorAll(".node").forEach(el => {
-    el.classList.remove("visited", "current", "available", "disabled");
+    el.classList.remove("visited","current","available","disabled");
     el.classList.add("disabled");
   });
 
@@ -208,23 +172,21 @@ function render(state) {
 }
 
 /* =========================
-   RAIL + END DIAGNOSTIC
+   RAIL + DIAGNOSTIC
 ========================= */
 
 function updateRail(state) {
   document.getElementById("moveCount").textContent = state.moves;
   document.getElementById("score").textContent = calculateScore(state);
 
-  if (state.complete) {
-    showDiagnostic(state);
-  }
+  if (state.complete) showDiagnostic(state);
 }
 
 function showDiagnostic(state) {
   let message = "<h3>ATS Diagnostic Report</h3>";
 
   if (state.trapsHit.size === 0) {
-    message += "<p>You avoided major ATS pitfalls. Strong structural sequencing.</p>";
+    message += "<p>You optimized Experience structure and alignment effectively.</p>";
   } else {
     state.trapsHit.forEach(trap => {
       message += `<p><strong>${trap.replace("_"," ")}</strong>: ${trapExplanations[trap]}</p>`;
@@ -235,7 +197,7 @@ function showDiagnostic(state) {
 }
 
 /* =========================
-   MAIN
+   INIT
 ========================= */
 
 render(state);
