@@ -1,896 +1,347 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>ATS Resume Maze</title>
+
 <style>
-  :root{
-    --bg:#fff;
-    --ink:#111;
-    --muted:#444;
-    --rule:#d6d6d6;
-    --yellow:#ffe86a;
-    --yellow-border:#d1c25d;
-    --shadow: 0 2px 10px rgba(0,0,0,.08);
-    --radius:14px;
-    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-  }
-  html,body{height:100%}
-  body{ margin:0; background:var(--bg); color:var(--ink); font-family:var(--font); }
+:root{
+  --bg:#fff;
+  --ink:#111;
+  --muted:#444;
+  --rule:#d6d6d6;
+  --yellow:#ffe86a;
+  --yellow-border:#d1c25d;
+  --shadow:0 2px 10px rgba(0,0,0,.08);
+  --radius:14px;
+  --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+}
 
-  .wrap{
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: 16px;
-    display:grid;
-    grid-template-columns: 360px 1fr;
-    gap: 14px;
-  }
-  @media (max-width: 980px){
-    .wrap{ grid-template-columns: 1fr; }
-  }
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font)}
 
-  /* Left panel */
-  .panel{
-    border:1px solid var(--rule);
-    border-radius: var(--radius);
-    background:#fafafa;
-    box-shadow: var(--shadow);
-    overflow:hidden;
-  }
-  .panel header{
-    background:#fff;
-    border-bottom:1px solid var(--rule);
-    padding: 12px 14px 10px;
-  }
-  h1{ margin:0 0 6px; font-size:16px; letter-spacing:.2px; }
-  .sub{ margin:0; font-size:13px; color:var(--muted); line-height:1.35; }
+.wrap{
+  max-width:1200px;
+  margin:0 auto;
+  padding:16px;
+  display:grid;
+  grid-template-columns:360px 1fr;
+  gap:14px;
+}
+@media(max-width:980px){.wrap{grid-template-columns:1fr}}
 
-  .panel .content{ padding:14px; }
-  .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+.panel,.paper{
+  border:1px solid var(--rule);
+  border-radius:var(--radius);
+  background:#fff;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
 
-  button{
-    appearance:none;
-    border:1px solid var(--rule);
-    background:#fff;
-    color:var(--ink);
-    border-radius:12px;
-    padding:10px 12px;
-    font-size:14px;
-    cursor:pointer;
-    box-shadow: 0 1px 0 rgba(0,0,0,.04);
-  }
-  .pill{
-    border:1px solid var(--rule);
-    border-radius:999px;
-    padding:8px 10px;
-    background:#fff;
-    font-size:13px;
-    color:var(--muted);
-  }
-  .status{
-    border:1px solid var(--rule);
-    border-radius:12px;
-    padding:10px 12px;
-    background:#fff;
-    font-size:13px;
-    color:var(--muted);
-    line-height:1.35;
-  }
-  .status strong{ color:var(--ink); }
-  .keys{
-    margin-top:10px;
-    font-size:12px;
-    color:var(--muted);
-    line-height:1.35;
-  }
-  .kbd{
-    display:inline-block;
-    border:1px solid var(--rule);
-    background:#fff;
-    border-radius:6px;
-    padding:1px 6px;
-    margin:0 2px;
-    font-size:12px;
-    color:var(--muted);
-  }
+.panel header,.paper header{
+  padding:12px 14px;
+  border-bottom:1px solid var(--rule);
+  background:#fff;
+}
 
-  /* Resume paper */
-  .paper{
-    border:1px solid var(--rule);
-    border-radius: var(--radius);
-    background:#fff;
-    box-shadow: var(--shadow);
-    overflow:hidden;
-  }
-  .paper header{
-    padding: 12px 14px;
-    border-bottom:1px solid var(--rule);
-    background:#fff;
-    display:flex;
-    justify-content:space-between;
-    gap:10px;
-    flex-wrap:wrap;
-    align-items:flex-start;
-  }
-  .paperTitle{ display:flex; flex-direction:column; gap:4px; min-width:260px; }
-  .paperTitle .title{ font-size:16px; font-weight:800; letter-spacing:.2px; }
-  .paperTitle .meta{ font-size:12px; color:var(--muted); }
+h1{margin:0 0 6px;font-size:16px}
+.sub{font-size:13px;color:var(--muted)}
 
-  .resumeStage{
-    position:relative;
-    padding: 18px 18px 20px;
-    max-width: 860px;
-    margin: 0 auto;
-  }
+.panel .content{padding:14px}
 
-  /* Resume typography (B/W) */
-  .nameLine{ margin-bottom:10px; }
-  .name{ font-size:22px; font-weight:900; letter-spacing:.2px; margin:0; }
-  .tagline{ font-size:12px; color:var(--muted); margin:4px 0 0; }
-  .rule{ border:0; border-top:1px solid var(--rule); margin:12px 0; }
-  .section{ margin-top: 10px; }
-  .sectionTitle{
-    font-size:12px;
-    letter-spacing:.12em;
-    font-weight:900;
-    text-transform:uppercase;
-    margin:0 0 6px;
-  }
-  .small{ font-size:12px; color:var(--muted); }
-  ul{ margin:6px 0 0 18px; padding:0; }
-  li{ margin:4px 0; font-size:13px; }
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
 
-  /* Hotspots: invisible zones aligned over text.
-     We highlight the underlying text span instead. */
-  .hot{
-    position:relative;
-    border-radius:10px;
-    padding: 1px 2px;
-  }
-  .hot.current, .hot.visited{
-    background: var(--yellow);
-    border: 1px solid var(--yellow-border);
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
-  }
+button{
+  border:1px solid var(--rule);
+  background:#fff;
+  border-radius:12px;
+  padding:8px 12px;
+  cursor:pointer;
+}
 
-  /* Tooltip (shows on current OR hover) */
-  .tip{
-    position:absolute;
-    left:0;
-    top: calc(100% + 8px);
-    width: 280px;
-    max-width: 70vw;
-    background:#fff;
-    border:1px solid var(--rule);
-    border-radius:12px;
-    padding:10px;
-    font-size:12px;
-    line-height:1.35;
-    color:var(--ink);
-    box-shadow: var(--shadow);
-    display:none;
-    z-index:999;
-  }
-  .hot.current .tip{ display:block; }      /* keyboard-friendly “hover equivalent” */
-  .hot:hover .tip{ display:block; }        /* optional mouse hover */
-  .tip strong{ display:block; margin-bottom:4px; }
+.pill{
+  border:1px solid var(--rule);
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:13px;
+  color:var(--muted);
+}
 
-  /* Visual markers for start/end (subtle, B/W) */
-  .badge{
-    display:inline-block;
-    border:1px solid var(--rule);
-    border-radius:999px;
-    padding: 2px 8px;
-    font-size:11px;
-    color:var(--muted);
-    margin-left:6px;
-    vertical-align:middle;
-  }
+.status{
+  border:1px solid var(--rule);
+  border-radius:12px;
+  padding:10px;
+  font-size:13px;
+  color:var(--muted);
+}
+
+.resume{
+  padding:20px;
+  max-width:880px;
+  margin:0 auto;
+}
+
+.name{font-size:22px;font-weight:900;margin:0}
+.tagline{font-size:12px;color:var(--muted);margin-top:4px}
+.section{margin-top:14px}
+.sectionTitle{
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+ul{margin:6px 0 0 18px}
+li{margin:4px 0;font-size:13px}
+
+.hot{
+  border-radius:8px;
+  padding:2px 4px;
+}
+
+.hot.current,.hot.visited{
+  background:var(--yellow);
+  border:1px solid var(--yellow-border);
+}
+
+.badVisual{
+  font-family:cursive;
+}
+.twoColumn{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.badBox{
+  border:2px dashed #999;
+  padding:4px;
+}
+.badTable table{
+  border-collapse:collapse;
+}
+.badTable td{
+  border:1px solid #aaa;
+  padding:3px;
+}
 </style>
 </head>
 
 <body>
+
 <div class="wrap">
 
-  <section class="panel" aria-labelledby="t1">
-    <header>
-      <h1 id="t1">ATS Resume Maze</h1>
-      <p class="sub">
-        Navigate a resume using arrow keys. Your path highlights in yellow.
-        Reach <strong>Education</strong> (bottom-right) without stepping on ATS pitfalls (blocked).
-      </p>
-    </header>
+<section class="panel">
+<header>
+<h1>ATS Resume Maze</h1>
+<p class="sub">
+Arrow keys move through resume elements. Yellow shows your path.
+Reach <strong>Education</strong> without stepping on formatting or content errors.
+</p>
+</header>
 
-    <div class="content">
-      <div class="row">
-        <button id="newBtn" type="button">New Round</button>
-        <button id="restartBtn" type="button">Restart</button>
-        <span class="pill" id="roundPill">Round: 1</span>
-        <span class="pill" id="movesPill">Moves: 0</span>
-      </div>
+<div class="content">
+<div class="row">
+<button id="newBtn">New Round</button>
+<button id="resetBtn">Restart</button>
+<span class="pill" id="roundPill">Round: 1</span>
+<span class="pill" id="movesPill">Moves: 0</span>
+</div>
 
-      <div class="status" id="status" role="status" aria-live="polite">
-        <strong>Goal:</strong> Start at Address (top-left) → finish at Education (bottom-right).
-      </div>
+<div class="status" id="status">
+Start at Address. Navigate around ATS traps. Finish at Education.
+</div>
+</div>
+</section>
 
-      <div class="keys">
-        Controls:
-        <span class="kbd">↑</span><span class="kbd">↓</span><span class="kbd">←</span><span class="kbd">→</span>
-        move • moves are blocked by “walls” and pitfalls • audio plays on move.
-      </div>
-    </div>
-  </section>
+<section class="paper">
+<header>
+<div>
+<strong>Mock Resume</strong>
+</div>
+</header>
 
-  <section class="paper" aria-labelledby="t2">
-    <header>
-      <div class="paperTitle">
-        <div class="title" id="t2">Mock Resume (Black & White)</div>
-        <div class="meta" id="meta">Round uses a different resume + hidden maze graph.</div>
-      </div>
-      <div class="row" style="margin:0">
-        <span class="pill" id="variantPill">Variant: A</span>
-        <span class="pill" id="progressPill">Start: Address</span>
-      </div>
-    </header>
+<div class="resume" id="stage"></div>
 
-    <div class="resumeStage" id="stage">
-      <!-- injected resume HTML -->
-    </div>
-  </section>
-
+</section>
 </div>
 
 <script>
-/*
-  Implementation notes
-  - “Invisible navigation zones” are realized as spans around text elements (hotspots).
-  - Arrow movement is constrained by an explicit graph (edges). This produces maze behavior
-    without drawing lines.
-  - Pitfalls exist as hotspots but are blocked destinations.
-  - Tooltip shows when hotspot is current (keyboard equivalent of hover), and on mouse hover.
-*/
+let round=1,moves=0,current=null,visited=new Set();
+let graph=new Map(),blocked=new Set(),hotEls=new Map();
 
-const stage = document.getElementById("stage");
-const statusEl = document.getElementById("status");
-const roundPill = document.getElementById("roundPill");
-const movesPill = document.getElementById("movesPill");
-const variantPill = document.getElementById("variantPill");
-const progressPill = document.getElementById("progressPill");
-const metaEl = document.getElementById("meta");
+const stage=document.getElementById("stage");
+const statusEl=document.getElementById("status");
+const roundPill=document.getElementById("roundPill");
+const movesPill=document.getElementById("movesPill");
 
-document.getElementById("newBtn").addEventListener("click", () => newRound());
-document.getElementById("restartBtn").addEventListener("click", () => restartRound());
+document.getElementById("newBtn").onclick=()=>{round++;load()};
+document.getElementById("resetBtn").onclick=()=>{restart()};
 
-let round = 1;
-let moves = 0;
-let currentId = null;
-let visited = new Set();
-
-let hotElsById = new Map();    // id -> element
-let hotspots = [];             // {id, type, rect}
-let graph = new Map();         // id -> {up,down,left,right} neighbors (nullable)
-let blocked = new Set();       // pitfalls: cannot move into
-
-// Audio: simple oscillator ticks (LMS-safe; no external files)
-let audioCtx = null;
-function beep(freq=440, ms=50, gain=0.06){
-  try{
-    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.frequency.value = freq;
-    o.type = "sine";
-    g.gain.value = gain;
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start();
-    setTimeout(()=>{ o.stop(); }, ms);
-  }catch(e){
-    // ignore if blocked
-  }
-}
-
-function setStatus(html){ statusEl.innerHTML = html; }
 function updateHUD(){
-  roundPill.textContent = `Round: ${round}`;
-  movesPill.textContent = `Moves: ${moves}`;
+roundPill.textContent="Round: "+round;
+movesPill.textContent="Moves: "+moves;
 }
 
-// --- Resume variants (content + maze graph) ---
-/*
-  Each variant defines:
-  - html: the resume markup with <span class="hot" data-id="..."> around hotspots
-  - startId, endId
-  - pitfalls: array of hotspot ids that are ATS pitfalls (blocked)
-  - edges: directional adjacency map to create a “maze”
-*/
-const VARIANTS = [
-  makeVariantA(),
-  makeVariantB(),
-  makeVariantC()
-];
-
-function makeVariantA(){
-  // Path idea: clean ATS route exists; branches dead-end; pitfalls block shortcuts.
-  return {
-    key:"A",
-    html: `
-      <div class="nameLine">
-        <p class="name">Jordan Avery</p>
-        <p class="tagline">Digital Communications • Content Strategy • Analytics</p>
-      </div>
-
-      <div>
-        <span class="hot" data-id="addr1">123 Main St, Springfield, MA 01101<span class="badge">START</span>
-          <span class="tip"><strong>ATS-friendly</strong>Plain-text contact block parses reliably.</span>
-        </span><br/>
-        <span class="hot" data-id="addr2">(555) 555-5555 • jordan@email.com
-          <span class="tip"><strong>ATS-friendly</strong>Use text labels/standard separators; avoid icons-only contact lines.</span>
-        </span><br/>
-        <span class="hot" data-id="addr3">linkedin.com/in/jordanavery
-          <span class="tip"><strong>ATS-friendly</strong>Explicit URL text is searchable and parsable.</span>
-        </span>
-        &nbsp;&nbsp;
-        <span class="hot" data-id="trap_scriptfont">✦ Decorative script font (pretend)
-          <span class="tip"><strong>ATS pitfall</strong>Decorative fonts can mis-parse. Use standard fonts (Arial/Calibri/Times).</span>
-        </span>
-      </div>
-
-      <hr class="rule" />
-
-      <div class="section">
-        <div class="sectionTitle">
-          <span class="hot" data-id="sum_head">Summary
-            <span class="tip"><strong>ATS-friendly</strong>Standard headings improve parsing and recruiter scanning.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <span class="hot" data-id="sum_good">Results-oriented communications specialist with experience in SEO, GA4, and stakeholder communications.
-            <span class="tip"><strong>ATS-friendly</strong>Keyword-rich + role-relevant + plain text.</span>
-          </span><br/>
-          <span class="hot" data-id="sum_bad">“Hard-working team player who loves challenges.”
-            <span class="tip"><strong>ATS pitfall</strong>Vague, low-signal, few job-aligned keywords.</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="sectionTitle">
-          <span class="hot" data-id="skills_head">Core Skills
-            <span class="tip"><strong>ATS-friendly</strong>Simple text lists parse well; avoid graphics.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <span class="hot" data-id="skills_good">SEO • Web writing • Accessibility • Analytics • Project management
-            <span class="tip"><strong>ATS-friendly</strong>Explicit skill keywords help matching.</span>
-          </span>
-          &nbsp;&nbsp;
-          <span class="hot" data-id="trap_graphicbars">(graphic skill bars)
-            <span class="tip"><strong>ATS pitfall</strong>Images/graphics may not be readable by ATS.</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="sectionTitle">
-          <span class="hot" data-id="exp_head">Experience
-            <span class="tip"><strong>ATS-friendly</strong>Use standard headings: Experience, Education, Skills.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <strong>Content Specialist</strong> — Example College <span class="small">| Springfield, MA</span><br/>
-          <span class="hot" data-id="dates_good">08/2023 – 01/2026
-            <span class="tip"><strong>ATS-friendly</strong>Consistent date format (MM/YYYY) parses reliably.</span>
-          </span>
-          <ul>
-            <li><span class="hot" data-id="metric1">Optimized 25+ webpages; improved organic sessions by 18% (GA4).
-              <span class="tip"><strong>ATS-friendly</strong>Quantified impact increases credibility and relevance.</span>
-            </span></li>
-            <li><span class="hot" data-id="tool_python">Automated weekly reporting in Python; saved ~2 hours/week.
-              <span class="tip"><strong>ATS-friendly</strong>Specific tools/languages match postings (Python, SQL, etc.).</span>
-            </span></li>
-            <li><span class="hot" data-id="trap_textbox">(bullet inside a text box)
-              <span class="tip"><strong>ATS pitfall</strong>Text boxes/shapes can break parsing and reading order.</span>
-            </span></li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="sectionTitle">
-          <span class="hot" data-id="tools_head">Tools
-            <span class="tip"><strong>ATS-friendly</strong>Explicit tool names are searchable keywords.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <span class="hot" data-id="tools_list">GA4 • Looker Studio • WordPress • Excel • Asana • Slack
-            <span class="tip"><strong>ATS-friendly</strong>List tools in plain text; avoid icons-only.</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="section" style="margin-top:14px;">
-        <div class="sectionTitle">
-          <span class="hot" data-id="edu_head">Education
-            <span class="tip"><strong>ATS-friendly</strong>Standard heading helps ATS and recruiters locate credentials.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <span class="hot" data-id="edu_goal">B.A., Communication — Example University (05/2023)<span class="badge">FINISH</span>
-            <span class="tip"><strong>ATS-friendly</strong>Degree + institution + date in plain text.</span>
-          </span>
-        </div>
-      </div>
-    `,
-    startId:"addr1",
-    endId:"edu_goal",
-    pitfalls:["trap_scriptfont","sum_bad","trap_graphicbars","trap_textbox"],
-    edges: {
-      // Start corridor (multiple options; only one leads to finish)
-      addr1: { right:"trap_scriptfont", down:"addr2" },
-      addr2: { up:"addr1", down:"addr3", right:null, left:null },
-      addr3: { up:"addr2", down:"sum_head" },
-
-      // Summary area
-      sum_head: { up:"addr3", down:"sum_good", right:"sum_bad" },
-      sum_good: { up:"sum_head", down:"skills_head" },
-      sum_bad: { left:"sum_head" },
-
-      // Skills area
-      skills_head: { up:"sum_good", down:"skills_good" },
-      skills_good: { up:"skills_head", right:"trap_graphicbars", down:"exp_head" },
-      trap_graphicbars: { left:"skills_good" },
-
-      // Experience area
-      exp_head: { up:"skills_good", down:"dates_good" },
-      dates_good: { up:"exp_head", down:"metric1" },
-      metric1: { up:"dates_good", down:"tool_python" },
-      tool_python: { up:"metric1", right:"trap_textbox", down:"tools_head" },
-      trap_textbox: { left:"tool_python" },
-
-      // Tools -> Education
-      tools_head: { up:"tool_python", down:"tools_list" },
-      tools_list: { up:"tools_head", down:"edu_head" },
-      edu_head: { up:"tools_list", down:"edu_goal" },
-      edu_goal: { up:"edu_head" },
-
-      // Pitfall shortcut (blocked) from start:
-      trap_scriptfont: { left:"addr1" }
-    }
-  };
-}
-
-function makeVariantB(){
-  // Different layout + different trap placements + same mechanics
-  return {
-    key:"B",
-    html: `
-      <div class="nameLine">
-        <p class="name">Jordan Avery</p>
-        <p class="tagline">Social Media • Digital Content • Community Engagement</p>
-      </div>
-
-      <div>
-        <span class="hot" data-id="addr1">123 Main St, Springfield, MA 01101<span class="badge">START</span>
-          <span class="tip"><strong>ATS-friendly</strong>Plain, text-based contact block.</span>
-        </span><br/>
-        <span class="hot" data-id="addr2">(555) 555-5555 • jordan@email.com
-          <span class="tip"><strong>ATS-friendly</strong>Readable contact info (no icons-only).</span>
-        </span><br/>
-        <span class="hot" data-id="trap_icons">(icons-only contact line)
-          <span class="tip"><strong>ATS pitfall</strong>Icons may not parse; use words like “Phone:” “Email:”.</span>
-        </span>
-      </div>
-
-      <hr class="rule" />
-
-      <div class="section">
-        <div class="sectionTitle">
-          <span class="hot" data-id="kw_head">Keywords
-            <span class="tip"><strong>ATS-friendly</strong>Include posting-aligned keywords naturally.</span>
-          </span>
-          &nbsp;&nbsp;
-          <span class="hot" data-id="trap_keywordspam">SEO SEO SEO SEO
-            <span class="tip"><strong>ATS pitfall</strong>Keyword stuffing reads as spam; embed keywords in context.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <span class="hot" data-id="kw_good">digital communications, content development, community engagement, campaign strategy, social analytics
-            <span class="tip"><strong>ATS-friendly</strong>Accurate keyword mirroring without stuffing.</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="sectionTitle">
-          <span class="hot" data-id="exp_head">Experience
-            <span class="tip"><strong>ATS-friendly</strong>Standard section naming helps parsing.</span>
-          </span>
-          &nbsp;&nbsp;
-          <span class="hot" data-id="trap_twocol">(two-column main body)
-            <span class="tip"><strong>ATS pitfall</strong>Columns can scramble reading order; stick to one column.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <strong>Social Media Assistant</strong> — Example Org<br/>
-          <span class="hot" data-id="dates_good">09/2024 – 01/2026
-            <span class="tip"><strong>ATS-friendly</strong>Consistent dates (MM/YYYY).</span>
-          </span>
-          <ul>
-            <li><span class="hot" data-id="metric1">Built 4-week content calendars; increased engagement rate by 12%.
-              <span class="tip"><strong>ATS-friendly</strong>Quantified outcome; role-relevant.</span>
-            </span></li>
-            <li><span class="hot" data-id="trap_table">(content placed in a table)
-              <span class="tip"><strong>ATS pitfall</strong>Complex tables can break parsing order.</span>
-            </span></li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="sectionTitle">
-          <span class="hot" data-id="skills_head">Core Skills
-            <span class="tip"><strong>ATS-friendly</strong>Text-based skills list.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <span class="hot" data-id="skills_good">Content strategy • Copywriting • SEO • GA4 • CMS
-            <span class="tip"><strong>ATS-friendly</strong>Explicit skills match postings.</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="sectionTitle">
-          <span class="hot" data-id="tools_head">Tools
-            <span class="tip"><strong>ATS-friendly</strong>Specific platform names act as keywords.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <span class="hot" data-id="tools_list">WordPress • GA4 • Looker Studio • Hootsuite/Buffer
-            <span class="tip"><strong>ATS-friendly</strong>Plain-text tools list.</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="section" style="margin-top:14px;">
-        <div class="sectionTitle">
-          <span class="hot" data-id="edu_head">Education
-            <span class="tip"><strong>ATS-friendly</strong>Standard heading and format.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <span class="hot" data-id="edu_goal">B.A., Communication — Example University (05/2023)<span class="badge">FINISH</span>
-            <span class="tip"><strong>ATS-friendly</strong>Degree + institution + date in plain text.</span>
-          </span>
-        </div>
-      </div>
-    `,
-    startId:"addr1",
-    endId:"edu_goal",
-    pitfalls:["trap_icons","trap_keywordspam","trap_twocol","trap_table"],
-    edges: {
-      addr1: { down:"addr2" },
-      addr2: { up:"addr1", down:"kw_head", right:"trap_icons" },
-      trap_icons: { left:"addr2" },
-
-      kw_head: { up:"addr2", down:"kw_good", right:"trap_keywordspam" },
-      trap_keywordspam: { left:"kw_head" },
-      kw_good: { up:"kw_head", down:"exp_head" },
-
-      exp_head: { up:"kw_good", down:"dates_good", right:"trap_twocol" },
-      trap_twocol: { left:"exp_head" },
-      dates_good: { up:"exp_head", down:"metric1" },
-      metric1: { up:"dates_good", down:"skills_head", right:"trap_table" },
-      trap_table: { left:"metric1" },
-
-      skills_head: { up:"metric1", down:"skills_good" },
-      skills_good: { up:"skills_head", down:"tools_head" },
-
-      tools_head: { up:"skills_good", down:"tools_list" },
-      tools_list: { up:"tools_head", down:"edu_head" },
-
-      edu_head: { up:"tools_list", down:"edu_goal" },
-      edu_goal: { up:"edu_head" }
-    }
-  };
-}
-
-function makeVariantC(){
-  // More “maze-y”: extra branches that dead-end but are not pitfalls.
-  return {
-    key:"C",
-    html: `
-      <div class="nameLine">
-        <p class="name">Jordan Avery</p>
-        <p class="tagline">Professional Writing • Data-Informed Content • Workflow Optimization</p>
-      </div>
-
-      <div>
-        <span class="hot" data-id="addr1">123 Main St, Springfield, MA 01101<span class="badge">START</span>
-          <span class="tip"><strong>ATS-friendly</strong>Simple text contact block.</span>
-        </span><br/>
-        <span class="hot" data-id="addr2">(555) 555-5555 • jordan@email.com
-          <span class="tip"><strong>ATS-friendly</strong>Readable separators and text labels.</span>
-        </span>
-      </div>
-
-      <div class="section" style="margin-top:10px;">
-        <span class="hot" data-id="trap_infographic">(infographic panel)
-          <span class="tip"><strong>ATS pitfall</strong>Image-based content can’t be reliably parsed.</span>
-        </span>
-        &nbsp;&nbsp;
-        <span class="hot" data-id="detour_note">Volunteer: newsletter editor (optional)
-          <span class="tip"><strong>ATS-friendly</strong>Optional section; can be relevant, but not required.</span>
-        </span>
-      </div>
-
-      <hr class="rule" />
-
-      <div class="section">
-        <div class="sectionTitle">
-          <span class="hot" data-id="sum_head">Summary
-            <span class="tip"><strong>ATS-friendly</strong>Standard headings improve parsing.</span>
-          </span>
-          &nbsp;&nbsp;
-          <span class="hot" data-id="trap_fancyheading">“My Journey”
-            <span class="tip"><strong>ATS pitfall</strong>Nonstandard headings can reduce parser accuracy.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <span class="hot" data-id="sum_good">Communications professional with experience in SEO, analytics, and process improvement.
-            <span class="tip"><strong>ATS-friendly</strong>Concrete keywords + plain text.</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="sectionTitle">
-          <span class="hot" data-id="exp_head">Experience
-            <span class="tip"><strong>ATS-friendly</strong>Standard section naming.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <strong>Content Specialist</strong> — Example College<br/>
-          <span class="hot" data-id="dates_good">08/2023 – 01/2026
-            <span class="tip"><strong>ATS-friendly</strong>Consistent dates.</span>
-          </span>
-          <ul>
-            <li><span class="hot" data-id="tool_python">Built a Python script to clean survey data and generate weekly summaries.
-              <span class="tip"><strong>ATS-friendly</strong>Specific tools/languages are high-value keywords.</span>
-            </span></li>
-            <li><span class="hot" data-id="metric1">Reduced reporting turnaround time by 20% with standardized QA templates.
-              <span class="tip"><strong>ATS-friendly</strong>Quantified process improvement.</span>
-            </span></li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="sectionTitle">
-          <span class="hot" data-id="skills_head">Core Skills
-            <span class="tip"><strong>ATS-friendly</strong>Text-based list.</span>
-          </span>
-          &nbsp;&nbsp;
-          <span class="hot" data-id="trap_textbox">(skills in a text box)
-            <span class="tip"><strong>ATS pitfall</strong>Text boxes/shapes can break parsing.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <span class="hot" data-id="skills_good">SEO • Copywriting • Accessibility • Analytics • Project management
-            <span class="tip"><strong>ATS-friendly</strong>Plain-text keyword list.</span>
-          </span>
-          &nbsp;&nbsp;
-          <span class="hot" data-id="detour_tools_alt">Tools: Trello • Notion (optional)
-            <span class="tip"><strong>ATS-friendly</strong>Optional tools—use only if job-relevant.</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="sectionTitle">
-          <span class="hot" data-id="tools_head">Tools
-            <span class="tip"><strong>ATS-friendly</strong>Explicit tool names help matching.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <span class="hot" data-id="tools_list">GA4 • Looker Studio • WordPress • Excel
-            <span class="tip"><strong>ATS-friendly</strong>Plain text tools list.</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="section" style="margin-top:14px;">
-        <div class="sectionTitle">
-          <span class="hot" data-id="edu_head">Education
-            <span class="tip"><strong>ATS-friendly</strong>Standard heading and format.</span>
-          </span>
-        </div>
-        <div style="font-size:13px;">
-          <span class="hot" data-id="edu_goal">B.A., Communication — Example University (05/2023)<span class="badge">FINISH</span>
-            <span class="tip"><strong>ATS-friendly</strong>Degree + institution + date.</span>
-          </span>
-        </div>
-      </div>
-    `,
-    startId:"addr1",
-    endId:"edu_goal",
-    pitfalls:["trap_infographic","trap_fancyheading","trap_textbox"],
-    edges: {
-      addr1: { down:"addr2", right:"trap_infographic" },
-      addr2: { up:"addr1", down:"sum_head", right:"detour_note" },
-      trap_infographic: { left:"addr1" },
-      detour_note: { left:"addr2" }, // dead-end detour
-
-      sum_head: { up:"addr2", down:"sum_good", right:"trap_fancyheading" },
-      trap_fancyheading: { left:"sum_head" },
-      sum_good: { up:"sum_head", down:"exp_head" },
-
-      exp_head: { up:"sum_good", down:"dates_good" },
-      dates_good: { up:"exp_head", down:"tool_python" },
-      tool_python: { up:"dates_good", down:"metric1" },
-      metric1: { up:"tool_python", down:"skills_head" },
-
-      skills_head: { up:"metric1", down:"skills_good", right:"trap_textbox" },
-      trap_textbox: { left:"skills_head" },
-      skills_good: { up:"skills_head", right:"detour_tools_alt", down:"tools_head" },
-      detour_tools_alt: { left:"skills_good" }, // dead-end detour
-
-      tools_head: { up:"skills_good", down:"tools_list" },
-      tools_list: { up:"tools_head", down:"edu_head" },
-      edu_head: { up:"tools_list", down:"edu_goal" },
-      edu_goal: { up:"edu_head" }
-    }
-  };
-}
-
-// --- Core engine ---
-function loadVariant(v){
-  variantPill.textContent = `Variant: ${v.key}`;
-  stage.innerHTML = v.html;
-
-  // Collect hotspots
-  hotElsById.clear();
-  const els = Array.from(stage.querySelectorAll(".hot[data-id]"));
-  els.forEach(el => hotElsById.set(el.dataset.id, el));
-
-  // Build graph + blocked set
-  graph = new Map();
-  blocked = new Set(v.pitfalls);
-
-  for(const [id, dirs] of Object.entries(v.edges)){
-    graph.set(id, { up: dirs.up||null, down: dirs.down||null, left: dirs.left||null, right: dirs.right||null });
-  }
-
-  // Ensure all nodes exist in DOM
-  for(const id of graph.keys()){
-    if(!hotElsById.has(id)){
-      console.warn("Graph node missing in DOM:", id);
-    }
-  }
-
-  // Reset run
-  moves = 0;
-  visited = new Set();
-  setCurrent(v.startId, true);
-  updateHUD();
-  progressPill.textContent = "Goal: Education";
-  setStatus(`<strong>Start:</strong> Address (top-left). Navigate to <strong>Education</strong> (bottom-right). Pitfalls are blocked.`);
-  metaEl.textContent = "Arrow keys move through hidden connections between resume elements (maze graph).";
-}
-
-function setCurrent(id, isReset=false){
-  if(!id) return;
-  const nextEl = hotElsById.get(id);
-  if(!nextEl) return;
-
-  // Clear current
-  if(currentId && hotElsById.get(currentId)){
-    hotElsById.get(currentId).classList.remove("current");
-  }
-
-  currentId = id;
-  visited.add(id);
-
-  // Update classes
-  for(const [hid, el] of hotElsById.entries()){
-    if(visited.has(hid)) el.classList.add("visited");
-  }
-  nextEl.classList.add("current");
-
-  // Keep current in view (nice for iframe)
-  nextEl.scrollIntoView({block:"center", inline:"nearest"});
-
-  if(!isReset){
-    // If at goal:
-    const v = currentVariant();
-    if(id === v.endId){
-      setStatus(`✅ Completed in <strong>${moves}</strong> moves. Click <strong>New Round</strong> for a new resume maze.`);
-      progressPill.textContent = "Completed";
-    }
-  }
-}
-
-function currentVariant(){
-  return VARIANTS[(round-1) % VARIANTS.length];
-}
-
-function tryMove(dir){
-  const v = currentVariant();
-  if(!currentId) return;
-
-  // If already finished, block further movement
-  if(currentId === v.endId){
-    beep(220, 35, 0.04);
-    return;
-  }
-
-  const node = graph.get(currentId);
-  if(!node){
-    beep(200, 35, 0.04);
-    return;
-  }
-
-  const dest = node[dir];
-  if(!dest){
-    // wall
-    beep(180, 35, 0.04);
-    setStatus(`<strong>Blocked.</strong> That direction is a wall.`);
-    return;
-  }
-
-  if(blocked.has(dest)){
-    // pitfall
-    beep(160, 45, 0.05);
-    const el = hotElsById.get(dest);
-    const label = el ? el.textContent.trim().slice(0, 40) : dest;
-    setStatus(`<strong>Blocked (ATS pitfall).</strong> You can’t step onto that element. Route around it.`);
-    return;
-  }
-
-  moves++;
-  updateHUD();
-  beep(520, 35, 0.05);
-  setCurrent(dest);
-}
-
-function restartRound(){
-  const v = currentVariant();
-  moves = 0;
-  visited = new Set();
-  // Clear classes
-  for(const el of hotElsById.values()){
-    el.classList.remove("current","visited");
-  }
-  updateHUD();
-  setCurrent(v.startId, true);
-  setStatus(`<strong>Restarted.</strong> Start at Address. Pitfalls are blocked.`);
-  progressPill.textContent = "Goal: Education";
-}
-
-function newRound(){
-  round++;
-  updateHUD();
-  // Load next variant (rotates)
-  loadVariant(currentVariant());
-}
-
-window.addEventListener("keydown", (e) => {
-  const keys = ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
-  if(keys.includes(e.key)){
-    e.preventDefault();
-    if(e.key==="ArrowUp") tryMove("up");
-    if(e.key==="ArrowDown") tryMove("down");
-    if(e.key==="ArrowLeft") tryMove("left");
-    if(e.key==="ArrowRight") tryMove("right");
-  }
-}, {passive:false});
-
-// Init
+function load(){
+moves=0;
+visited.clear();
 updateHUD();
-loadVariant(currentVariant());
+
+const v=variant();
+stage.innerHTML=v.html;
+
+hotEls.clear();
+document.querySelectorAll(".hot").forEach(el=>{
+hotEls.set(el.dataset.id,el);
+});
+
+graph=new Map(Object.entries(v.edges));
+blocked=new Set(v.pitfalls);
+
+setCurrent(v.start);
+statusEl.textContent="Navigate to Education without stepping on errors.";
+}
+
+function variant(){
+return {
+start:"addr",
+end:"edu",
+pitfalls:[
+"trap_font","trap_twocol","trap_box","trap_table",
+"trap_vague","trap_keywords","trap_icons","trap_heading"
+],
+html:`
+
+<p class="name">Jordan Avery</p>
+<p class="tagline">Digital Communications • Content Strategy</p>
+
+<div>
+<span class="hot" data-id="addr">123 Main St • Springfield, MA • jordan@email.com</span>
+<span class="hot" data-id="trap_icons">[icons-only contact]</span>
+</div>
+
+<hr>
+
+<div class="section">
+<div class="sectionTitle"><span class="hot" data-id="summary">Summary</span>
+<span class="hot badVisual" data-id="trap_font">Summary in script font</span>
+</div>
+<p>
+<span class="hot" data-id="sum_good">Results-driven communications specialist with experience in SEO, analytics, and stakeholder management.</span>
+<span class="hot" data-id="trap_vague">Hard-working team player with great attitude.</span>
+</p>
+</div>
+
+<div class="section">
+<div class="sectionTitle"><span class="hot" data-id="skills">Skills</span></div>
+<div class="twoColumn hot" data-id="trap_twocol">
+Two column layout
+</div>
+<p>
+<span class="hot" data-id="skills_good">SEO • GA4 • Accessibility • Content strategy</span>
+<span class="hot" data-id="trap_keywords">SEO SEO SEO SEO SEO</span>
+</p>
+</div>
+
+<div class="section">
+<div class="sectionTitle"><span class="hot" data-id="experience">Experience</span>
+<span class="hot" data-id="trap_heading">My Journey</span>
+</div>
+<ul>
+<li><span class="hot" data-id="exp_good">Optimized 25+ pages; increased traffic 18%.</span></li>
+<li><span class="hot badBox" data-id="trap_box">Bullet inside text box</span></li>
+<li><span class="hot" data-id="projects">Led website redesign project.</span></li>
+</ul>
+</div>
+
+<div class="section badTable">
+<div class="sectionTitle"><span class="hot" data-id="trap_table">Table-based layout</span></div>
+<table><tr><td>Data</td><td>Stuff</td></tr></table>
+</div>
+
+<div class="section">
+<div class="sectionTitle"><span class="hot" data-id="certs">Certifications</span></div>
+<p><span class="hot" data-id="cert_good">Google Analytics Certification</span></p>
+</div>
+
+<div class="section">
+<div class="sectionTitle"><span class="hot" data-id="education_head">Education</span></div>
+<p><span class="hot" data-id="edu">B.A. Communication — Example University</span></p>
+</div>
+`,
+edges:{
+addr:{down:"summary",right:"trap_icons"},
+summary:{up:"addr",down:"sum_good",right:"trap_font"},
+sum_good:{up:"summary",down:"skills"},
+skills:{up:"sum_good",down:"skills_good",right:"trap_twocol"},
+skills_good:{up:"skills",down:"experience",right:"trap_keywords"},
+experience:{up:"skills_good",down:"exp_good",right:"trap_heading"},
+exp_good:{up:"experience",down:"projects",right:"trap_box"},
+projects:{up:"exp_good",down:"certs"},
+certs:{up:"projects",down:"cert_good"},
+cert_good:{up:"certs",down:"education_head"},
+education_head:{up:"cert_good",down:"edu"},
+edu:{up:"education_head"},
+trap_icons:{left:"addr"},
+trap_font:{left:"summary"},
+trap_twocol:{left:"skills"},
+trap_keywords:{left:"skills_good"},
+trap_heading:{left:"experience"},
+trap_box:{left:"exp_good"},
+trap_table:{},
+trap_vague:{},
+},
+};
+}
+
+function setCurrent(id){
+if(current&&hotEls.get(current))hotEls.get(current).classList.remove("current");
+current=id;
+visited.add(id);
+for(const id2 of visited){
+hotEls.get(id2)?.classList.add("visited");
+}
+hotEls.get(id)?.classList.add("current");
+
+if(id==="edu"){
+statusEl.textContent="Completed in "+moves+" moves. Click New Round.";
+}
+}
+
+function move(dir){
+if(!graph.has(current))return;
+const next=graph.get(current)[dir];
+if(!next){return;}
+if(blocked.has(next)){return;}
+moves++;
+updateHUD();
+setCurrent(next);
+}
+
+window.addEventListener("keydown",e=>{
+if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)){
+e.preventDefault();
+if(e.key==="ArrowUp")move("up");
+if(e.key==="ArrowDown")move("down");
+if(e.key==="ArrowLeft")move("left");
+if(e.key==="ArrowRight")move("right");
+}
+},{passive:false});
+
+function restart(){
+moves=0;
+visited.clear();
+document.querySelectorAll(".hot").forEach(el=>{
+el.classList.remove("visited","current");
+});
+updateHUD();
+setCurrent("addr");
+}
+
+load();
+updateHUD();
 </script>
+
 </body>
 </html>
